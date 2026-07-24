@@ -39,20 +39,29 @@
 - 이름: `CloudTalkCallButton` · React 함수형 · TypeScript.
 - 배치: `src/features/trials/components/CloudTalkCallButton.tsx`.
 
+### 발신(from) 번호 — 환경변수
+- CloudTalk 발신 번호는 고정: `+82 234986970` (E.164: `+82234986970`).
+- **환경변수로 관리**: `NEXT_PUBLIC_CLOUDTALK_FROM`.
+  - ⚠ `ct+tel:` 링크는 **브라우저에서 생성**되므로 클라이언트에서 읽혀야 한다 →
+    **`NEXT_PUBLIC_` 접두어 필수.**
+  - 이 값은 **비밀이 아님**(고객에게 노출되는 발신자 표시 번호)이라 `NEXT_PUBLIC_` 이 안전하다.
+    n8n 토큰/URL 같은 **서버 전용 비밀과는 구분**된다(PRD §3 — 그쪽은 절대 `NEXT_PUBLIC` 금지).
+  - 접근 헬퍼: `src/features/trials/lib/cloudtalk.ts`
+    → `export const CLOUDTALK_FROM = process.env.NEXT_PUBLIC_CLOUDTALK_FROM ?? "";`
+- 따라서 호출부(상세 패널 등)는 **`targetNumber` 만** 넘긴다.
+
 ### Props
 | prop | 타입 | 필수 | 설명 |
 |---|---|---|---|
-| `targetNumber` | `string` | O | 발신 대상(학생) 번호. 컴포넌트 내부에서 `toE164` 적용 |
-| `fromNumber` | `string` | X | 발신자(상담원) CloudTalk 번호. 있으면 `?from=` 부착 |
-
-> `fromNumber`: 현재 대시보드 데이터에 상담원별 CloudTalk 번호 소스가 없다 →
-> MVP에서는 미전달(생략). 추후 상담원 설정/ENV 로 주입.
+| `targetNumber` | `string` | O | 발신 대상(고객/학생) 번호. 컴포넌트 내부에서 `toE164` 적용 |
+| `fromNumber` | `string` | X | 발신 번호 override(기본값 `CLOUDTALK_FROM`). 보통 생략 |
 
 ### href 생성 규칙
-- `target = toE164(targetNumber)`, 있으면 `from = toE164(fromNumber)`.
+- `target = toE164(targetNumber)`, `from = toE164(fromNumber ?? CLOUDTALK_FROM)`.
 - 각각 `encodeURIComponent` 로 인코딩.
-- `fromNumber` 있음: `ct+tel:{encTarget}?from={encFrom}`
-- `fromNumber` 없음: `ct+tel:{encTarget}`
+- `from` 값이 있으면(= env 설정됨) **`?from=` 부착**, 없으면 생략:
+  - `from` 있음: `ct+tel:{encTarget}?from={encFrom}`
+  - `from` 없음: `ct+tel:{encTarget}`
 
 ### UI
 - 버튼형 링크(`<a>`). shadcn `Button` 을 `render={<a … />}` 로 렌더(디자인 시스템 일관).
@@ -84,9 +93,9 @@
 
 ## 10. 참조 구현 (기준 — TS/정규화/fallback 반영해 개선)
 ```tsx
-// ct+tel: 은 E.164 필수 → toE164 로 정규화 후 링크 생성.
+// 발신 번호는 env(NEXT_PUBLIC_CLOUDTALK_FROM). ct+tel: 은 E.164 필수 → toE164 정규화.
 const target = toE164(targetNumber);
-const from = fromNumber ? toE164(fromNumber) : "";
+const from = toE164(fromNumber ?? CLOUDTALK_FROM); // "" 이면 ?from 생략
 const href = from
   ? `ct+tel:${encodeURIComponent(target)}?from=${encodeURIComponent(from)}`
   : `ct+tel:${encodeURIComponent(target)}`;

@@ -11,14 +11,22 @@ Handler → n8n Webhook → GCP Cloud SQL 구조로, n8n 토큰과 URL은 서버
 - 패키지 매니저: **pnpm**
 - 배포: Vercel
 
-## 환경 변수 (서버 전용)
+## 환경 변수
 
-`.env.example` 참고. `NEXT_PUBLIC_` 접두어 절대 금지 — 브라우저에 노출되면 안 됨.
+`.env.example` 참고.
+
+**서버 전용 (절대 `NEXT_PUBLIC_` 금지 — 브라우저 노출 시 유출)**
 
 | 변수 | 설명 |
 |---|---|
 | `N8N_BASE_URL` | n8n Webhook 베이스 URL (끝 슬래시 없이) |
 | `N8N_API_TOKEN` | n8n `x-api-key` 헤더 토큰 |
+
+**클라이언트 공개 (`NEXT_PUBLIC_` — 비밀 아닌 값만)**
+
+| 변수 | 설명 |
+|---|---|
+| `NEXT_PUBLIC_CLOUDTALK_FROM` | CloudTalk 클릭 발신(`ct+tel:`) 발신자 번호. 브라우저에서 링크 생성에 사용. 예: `+82 234986970` |
 
 로컬: `.env.local` 에 값 채우기 (git 무시됨).
 배포: Vercel 프로젝트 Environment Variables 에 등록.
