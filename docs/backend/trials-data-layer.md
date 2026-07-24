@@ -4,6 +4,10 @@
 > n8n webhook → GCP Cloud SQL(Postgres) 로 내려가는 **데이터 로직의 단일 설계서**.
 > 실제 DB 스키마 근거: `../n8n-workflows/docs/schema/public/*.md`.
 > ⚠ 프로덕션 DB 대상 DDL/쿼리이므로 **실행 전 소유자(Denise/DB) 확인**이 필요한 항목은 `VERIFY`/`DECISION`으로 표시.
+>
+> **현재 단계 = 문서/설계만.** n8n 워크플로우 구축·라이브 DB 조회·프로덕션 DDL 실행은 하지 않는다.
+> 관련 문서: 프론트 데이터 요구 [frontend-data-needs.md](./frontend-data-needs.md), API 명세 [openapi.yaml](./openapi.yaml).
+> **확정**: precheck 횟수 + 학생 추가정보는 **trial-sales 전용 기능 영역** → 신규 테이블 DDL 을 기능 요구 기준으로 둔다(아래 §2).
 
 ---
 
@@ -66,11 +70,13 @@ CREATE TABLE IF NOT EXISTS sales."TrialDashboardState" (
 - `lessonId` PK → trial 1건당 상태 1행. upsert(`ON CONFLICT`)로 단순.
 - core 테이블 무변경 → 프로덕션 리스크 최소, 롤백은 테이블 drop 한 번.
 - `updatedBy`/`updatedAt` 로 최소 감사 이력.
+- **CONFIRMED**: precheck·call-done·메모는 완전한 trial-sales 도메인 → 이 전용 테이블 소유가 맞음.
+  이 DDL 이 곧 기능 요구 명세이며, 실행 승인/시점은 별도(현재 단계는 문서).
 
-**대안 (DECISION)**
-- (A) *권장* — 위 단일 상태 테이블 + `salesNote` 자유서술 1필드.
+**대안 (DECISION — 미확정)**
+- (A) *권장/기본* — 위 단일 상태 테이블 + `salesNote` 자유서술 1필드(덮어쓰기).
 - (B) 세일즈 메모를 **이력(스레드)** 로 남기려면 기존 `"CallQueueNotes"(type='sales', content, lessonId, createdById)` 재사용 → DDL 불필요, 대신 조회 조인 추가. precheck/flag 는 여전히 (A) 테이블 필요.
-- → **추가 정보를 "덮어쓰는 한 줄"로 볼지 "쌓이는 메모"로 볼지** 확정 필요.
+- → **추가 정보를 "덮어쓰는 한 줄"로 볼지 "쌓이는 메모"로 볼지** 확정 필요. (현재 mock·타입은 A 기준)
 
 ---
 
@@ -215,8 +221,18 @@ RETURNING d."lessonId"::text AS trial_id, d."salesNote" AS note;
 - Route Handler 는 기존 3개와 동일 패턴(x-api-key 부착, no-store, mock 폴백)으로 추가.
 
 ## 6. 구현 순서 (backend 브랜치)
-1. (이 문서) 스키마·쿼리 설계 확정 ← **현재. V/D 항목 사용자 확인 대기.**
-2. 타입/계약 갱신(`types/trial.ts`: `sales_note`, note 요청/응답) — 프론트 파일 충돌 최소화(additive).
-3. Route Handler `note` 추가 + mock 확장(`setMockNote`).
-4. n8n 워크플로우 4개(today/detail/precheck/note) 구축 — `../n8n-workflows/workflows/trials-api/` + 위 SQL 투입.
-5. env 연결(`N8N_BASE_URL`/`TOKEN`) → mock 해제, end-to-end 검증.
+문서 단계(현재) → 라이브 단계(승인 후) 로 나눈다.
+
+**문서 단계 (현재 — 완료/진행)**
+1. ✅ 스키마·쿼리 설계(이 문서) + 프론트 데이터 요구([frontend-data-needs.md]) + API 명세([openapi.yaml]).
+2. ✅ 타입/계약 갱신(`types/trial.ts`: `sales_note`, note 요청/응답) — additive.
+3. ✅ Route Handler `note` 추가 + mock 확장(`setMockNote`) — mock 기준 end-to-end 동작.
+
+**라이브 단계 (사용자/DB 소유자 승인 후)**
+4. V/D 항목(§4) 라이브 DB 로 확정.
+5. 신규 테이블 `sales."TrialDashboardState"` 생성(DDL 실행).
+6. n8n 워크플로우 4개(today/detail/precheck/note) 구축 — `../n8n-workflows/workflows/trials-api/` + 위 SQL 투입.
+7. env 연결(`N8N_BASE_URL`/`TOKEN`) → mock 해제, end-to-end 검증.
+
+[frontend-data-needs.md]: ./frontend-data-needs.md
+[openapi.yaml]: ./openapi.yaml

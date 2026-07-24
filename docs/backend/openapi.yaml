@@ -1,0 +1,283 @@
+openapi: 3.1.0
+info:
+  title: Trial Dashboard API
+  version: 0.1.0
+  description: >
+    Sales팀 "오늘의 Trial" 대시보드가 호출하는 **브라우저 → 자기 도메인** API.
+    각 `/api/*` 는 서버 Route Handler가 n8n `/webhook/*` 로 프록시하며(x-api-key 부착,
+    no-store), n8n이 GCP Cloud SQL(Postgres)을 조회/기록한다.
+
+    - 인증: 브라우저-서버 구간은 same-origin(추가 헤더 없음). 서버-n8n 구간만 `x-api-key`
+      (서버 전용 env `N8N_API_TOKEN`, 브라우저 비노출).
+    - 캐시: 모든 응답 `Cache-Control: no-store`.
+    - 데이터 출처/쿼리: docs/backend/trials-data-layer.md. 필드 실사용: docs/backend/frontend-data-needs.md.
+    - ⚠ 데이터 계약 일부 미확정(PRD §9): status enum, Mentors 스키마, sales_rep 이름 소스.
+
+servers:
+  - url: /api
+    description: 브라우저가 호출하는 자기 도메인 (Next.js Route Handler)
+
+tags:
+  - name: trials
+    description: 오늘의 trial 조회 및 세일즈 상태 기록
+
+paths:
+  /trials:
+    get:
+      tags: [trials]
+      operationId: getTrialsToday
+      summary: 오늘의 trial 목록
+      description: >
+        KST 기준 오늘 예정된 trial 전체. 상단 KPI 카드는 이 응답을 프론트에서 집계한다
+        (별도 집계 API 없음). 프록시 대상 n8n `GET /webhook/trials/today`.
+      responses:
+        "200":
+          description: 오늘 trial 목록
+          headers:
+            Cache-Control: { schema: { type: string, example: no-store } }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TrialsTodayResponse" }
+        "502":
+          description: n8n 프록시 실패
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+
+  /trials/{id}:
+    get:
+      tags: [trials]
+      operationId: getTrialDetail
+      summary: 단건 trial 상세
+      description: 프록시 대상 n8n `GET /webhook/trials/detail?trial_id={id}`.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: trial_id (= Lessons.id)
+          schema: { type: string, example: "48213" }
+      responses:
+        "200":
+          description: trial 상세
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TrialDetail" }
+        "400":
+          description: id 누락
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+        "404":
+          description: 해당 trial 없음
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+
+  /trials/precheck:
+    patch:
+      tags: [trials]
+      operationId: savePrecheck
+      summary: pre-trial 체크 저장
+      description: >
+        pre-trial 체크(1·2·3) 저장. 프론트는 optimistic update 후 이 요청을 보낸다.
+        프록시 대상 n8n `PATCH /webhook/trials/precheck`. 저장처는 신규
+        `sales."TrialDashboardState"` (data-layer.md §2).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PrecheckRequest" }
+      responses:
+        "200":
+          description: 저장 결과 에코
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PrecheckResponse" }
+        "400":
+          description: 잘못된 body (trial_id/stage/checked)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+        "404":
+          description: 해당 trial 없음
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+
+  /trials/note:
+    patch:
+      tags: [trials]
+      operationId: saveNote
+      summary: 학생 추가정보(세일즈 메모) 저장
+      description: >
+        trial 학생에 대한 자유서술 추가정보 저장. 빈 문자열이면 기록 삭제로 취급.
+        프론트는 상세 캐시에 optimistic update. 프록시 대상 n8n `PATCH /webhook/trials/note`.
+        저장처 `sales."TrialDashboardState"."salesNote"`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NoteRequest" }
+      responses:
+        "200":
+          description: 저장 결과 에코
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NoteResponse" }
+        "400":
+          description: 잘못된 body (trial_id/note)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+        "404":
+          description: 해당 trial 없음
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+
+components:
+  schemas:
+    MentorTier:
+      type: string
+      enum: [elite, basic]
+
+    TrialListItem:
+      type: object
+      description: 목록 행 1건. 모든 필드가 표 또는 KPI 카드 집계에 사용됨.
+      required:
+        - trial_id
+        - trial_time
+        - student_id
+        - student_email
+        - student_phone_number
+        - mentor_name
+        - mentor_tier
+        - sales_rep_name
+        - status
+        - precheck_1
+        - precheck_2
+        - precheck_3
+        - pre_call_done
+        - post_call_done
+        - converted
+      properties:
+        trial_id: { type: string, example: "48213" }
+        trial_time:
+          type: string
+          format: date-time
+          description: ISO8601, KST offset 포함
+          example: "2026-07-24T14:00:00+09:00"
+        student_id: { type: string, example: "10432" }
+        student_email: { type: string, format: email }
+        student_phone_number: { type: string, example: "+82 10-2345-6789" }
+        mentor_name: { type: string, example: "Emma Wilson" }
+        mentor_tier: { $ref: "#/components/schemas/MentorTier" }
+        sales_rep_name:
+          type: string
+          description: 담당 Sales rep 표시명 (CallQueues 담당 admin). 소스 미확정(PRD §9).
+          example: "Andrew"
+        status:
+          type: string
+          description: Lessons.status. 관측값 approved | scheduled | canceled(철자 검증 필요).
+          example: "scheduled"
+        precheck_1: { type: boolean }
+        precheck_2: { type: boolean }
+        precheck_3: { type: boolean }
+        pre_call_done:
+          type: boolean
+          description: KPI 카드 전용(행 미표시). 판정기준 미확정(PRD §9).
+        post_call_done:
+          type: boolean
+          description: KPI 카드 전용(행 미표시). 판정기준 미확정(PRD §9).
+        converted:
+          type: boolean
+          description: CallQueues.lifecycle='converted' OR purchasedAt IS NOT NULL.
+
+    TrialsTodayResponse:
+      type: object
+      required: [trials]
+      properties:
+        trials:
+          type: array
+          items: { $ref: "#/components/schemas/TrialListItem" }
+
+    TrialDetail:
+      type: object
+      required:
+        - trial_id
+        - student_id
+        - student_email
+        - student_phone_number
+        - level
+        - mentor_id
+        - mentor_name
+        - mentor_gender
+        - interests
+        - trial_date
+      properties:
+        trial_id: { type: string }
+        student_id: { type: string }
+        student_email: { type: string, format: email }
+        student_phone_number: { type: string }
+        level:
+          type: string
+          description: "Students.level(+langLevel) 조합. 예: \"3 · Beginner-High\""
+        mentor_id: { type: string }
+        mentor_name: { type: string }
+        mentor_gender: { type: string, example: "female" }
+        interests:
+          type: array
+          items: { type: string }
+          description: CallQueues.answersJson.interests
+        trial_date:
+          type: string
+          format: date
+          example: "2026-07-24"
+        call_queue_url:
+          type: string
+          format: uri
+          deprecated: true
+          description: CloudTalk(ct+tel:) 전환으로 폐기 예정. 현재 병합 충돌 방지로 유지.
+        sales_note:
+          type: [string, "null"]
+          description: 학생 추가정보/세일즈 메모. 미기록이면 null.
+
+    PrecheckRequest:
+      type: object
+      required: [trial_id, stage, checked]
+      properties:
+        trial_id: { type: string }
+        stage: { type: integer, enum: [1, 2, 3] }
+        checked: { type: boolean }
+
+    PrecheckResponse:
+      type: object
+      required: [ok, trial_id, stage, checked]
+      properties:
+        ok: { type: boolean, const: true }
+        trial_id: { type: string }
+        stage: { type: integer, enum: [1, 2, 3] }
+        checked: { type: boolean }
+
+    NoteRequest:
+      type: object
+      required: [trial_id, note]
+      properties:
+        trial_id: { type: string }
+        note:
+          type: string
+          description: 자유서술 메모. 빈 문자열이면 기록 삭제.
+
+    NoteResponse:
+      type: object
+      required: [ok, trial_id, note]
+      properties:
+        ok: { type: boolean, const: true }
+        trial_id: { type: string }
+        note: { type: string }
+
+    ApiError:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
