@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { TrialDetail } from "@/types/trial";
 import { CHIP_NEUTRAL } from "../lib/format";
 import { useTrialDetail } from "../hooks/useTrialDetail";
+import { CloudTalkCallButton } from "./CloudTalkCallButton";
 
 interface Props {
   trialId: string | null;
@@ -95,8 +96,14 @@ export function TrialDetailSheet({ trialId, open, onOpenChange }: Props) {
           {detail && <DetailBody detail={detail} />}
         </div>
 
-        <div className="border-t border-glass-edge p-4">
+        <div className="flex flex-col gap-2 border-t border-glass-edge p-4">
+          {/* CloudTalk 클릭 발신 (ct+tel:) — 해당 학생 번호로 발신 */}
+          <CloudTalkCallButton
+            targetNumber={detail?.student_phone_number}
+            className="w-full"
+          />
           <Button
+            variant="outline"
             className="w-full"
             disabled={!detail?.call_queue_url}
             nativeButton={!detail?.call_queue_url}
