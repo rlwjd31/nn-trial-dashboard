@@ -15,6 +15,8 @@
 //   mentor_name          ← "CalendlyEvents"."mentorName" (예약 스냅샷) / "Mentors"
 //   mentor_tier          ← "Mentors".tier          ("MentorTier" enum = elite | basic)
 //   mentor_gender        ← "Mentors".gender        ("GenderType")
+//   sales_rep_name       ← "CallQueues".claimedByAdminId / autoAssignedToId → "Users"(admin)
+//                          (+ SalesRepConfigs). mock: Andrew / HyeonChang 랜덤 배정.
 //   interests            ← "CallQueues"."answersJson".interests (온보딩 설문)
 //   converted            ← "CallQueues".lifecycle = 'converted' / purchasedAt IS NOT NULL
 //   pre_call_done        ← 세일즈 pre-call 완료 (판정 기준 PRD §9 미확정)
@@ -100,7 +102,7 @@ const SEED: TrialSeed[] = [
     precheck_3: false,
     pre_call_done: true,
     post_call_done: true,
-    converted: false,
+    converted: true,
     level: "2 · Beginner",
     interests: ["K-pop", "Drawing", "Animals"],
     call_queue_id: 10517,
@@ -352,7 +354,18 @@ function precheckOf(seed: TrialSeed, stage: PrecheckStage): boolean {
   return seed[`precheck_${stage}` as const];
 }
 
-function toListItem(seed: TrialSeed, dateStr: string): TrialListItem {
+// mock 전용: Sales rep 랜덤 배정 (Andrew / HyeonChang). 실제로는 CallQueues 담당자 조인.
+const SALES_REP_BY_INDEX = [
+  "Andrew", "HyeonChang", "HyeonChang", "Andrew",
+  "HyeonChang", "Andrew", "Andrew", "HyeonChang",
+  "Andrew", "HyeonChang", "HyeonChang", "Andrew",
+];
+
+function toListItem(
+  seed: TrialSeed,
+  dateStr: string,
+  index: number,
+): TrialListItem {
   return {
     trial_id: seed.trial_id,
     trial_time: `${dateStr}T${pad(seed.hour)}:${pad(seed.minute)}:00+09:00`,
@@ -361,6 +374,7 @@ function toListItem(seed: TrialSeed, dateStr: string): TrialListItem {
     student_phone_number: seed.student_phone_number,
     mentor_name: seed.mentor_name,
     mentor_tier: seed.mentor_tier,
+    sales_rep_name: SALES_REP_BY_INDEX[index] ?? "Andrew",
     status: seed.status,
     precheck_1: precheckOf(seed, 1),
     precheck_2: precheckOf(seed, 2),
@@ -374,7 +388,7 @@ function toListItem(seed: TrialSeed, dateStr: string): TrialListItem {
 /** GET /webhook/trials/today 대체 — 오늘의 trial 목록 */
 export function getMockTrialsToday(now: Date = new Date()): TrialsTodayResponse {
   const dateStr = todayKstDate(now);
-  return { trials: SEED.map((s) => toListItem(s, dateStr)) };
+  return { trials: SEED.map((s, i) => toListItem(s, dateStr, i)) };
 }
 
 /** GET /webhook/trials/detail 대체 — 단건 상세 (없으면 null) */

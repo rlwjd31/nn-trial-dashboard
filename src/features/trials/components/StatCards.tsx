@@ -14,9 +14,10 @@ interface Tile {
   hint?: string;
 }
 
-// PRD §6.1 상단 카드 (Converted 는 nice-to-have).
+// PRD §6.1 상단 KPI 카드 (Converted 는 nice-to-have).
 const TILES: Tile[] = [
   { key: "total", label: "Today's trials", hint: "취소 제외" },
+  { key: "remaining", label: "Remaining", hint: "체크 0개" },
   { key: "preCallDone", label: "Pre-call done" },
   { key: "postCallDone", label: "Post-call done" },
   { key: "converted", label: "Converted today" },
@@ -24,7 +25,7 @@ const TILES: Tile[] = [
 
 export function StatCards({ stats, loading }: Props) {
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
       {TILES.map((tile) => (
         <div
           key={tile.key}

@@ -1,5 +1,6 @@
 "use client";
 
+import { CircleCheckIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -40,7 +41,10 @@ export function TrialsTable({ trials, onRowClick }: Props) {
             <TableHead>Email</TableHead>
             <TableHead>Phone</TableHead>
             <TableHead>Mentor</TableHead>
+            <TableHead>Tier</TableHead>
+            <TableHead>Rep</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead>Purchased</TableHead>
             <TableHead className="text-center">Pre-trial 1·2·3</TableHead>
           </TableRow>
         </TableHeader>
@@ -61,20 +65,33 @@ export function TrialsTable({ trials, onRowClick }: Props) {
                 <TableCell className="text-muted-foreground">
                   #{t.student_id}
                 </TableCell>
-                <TableCell className="max-w-[180px] truncate" title={t.student_email}>
+                <TableCell className="max-w-[260px] truncate" title={t.student_email}>
                   {t.student_email}
                 </TableCell>
                 <TableCell className="tabular-nums text-muted-foreground">
                   {t.student_phone_number}
                 </TableCell>
+                <TableCell className="text-foreground">
+                  {t.mentor_name}
+                </TableCell>
                 <TableCell>
-                  <span className="flex items-center gap-2">
-                    <span className="text-foreground">{t.mentor_name}</span>
-                    <Badge className={tier.className}>{tier.label}</Badge>
-                  </span>
+                  <Badge className={tier.className}>{tier.label}</Badge>
+                </TableCell>
+                <TableCell className="text-foreground">
+                  {t.sales_rep_name}
                 </TableCell>
                 <TableCell>
                   <Badge className={status.className}>{status.label}</Badge>
+                </TableCell>
+                <TableCell>
+                  {t.converted ? (
+                    <Badge className="border border-emerald-300/35 bg-emerald-400/20 text-emerald-50 backdrop-blur-sm">
+                      <CircleCheckIcon />
+                      Purchased
+                    </Badge>
+                  ) : (
+                    <span className="text-muted-foreground/50">—</span>
+                  )}
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center justify-center gap-3">

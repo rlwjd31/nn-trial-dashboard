@@ -13,6 +13,8 @@ export interface TrialListItem {
   student_phone_number: string;
   mentor_name: string;
   mentor_tier: MentorTier;
+  /** 이 trial을 담당하는 Sales rep 이름 (CallQueues.claimedByAdminId/autoAssignedToId → Users(admin)) */
+  sales_rep_name: string;
   status: string;
   precheck_1: boolean;
   precheck_2: boolean;
