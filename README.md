@@ -38,6 +38,7 @@ pnpm install
 pnpm dev        # http://localhost:3000
 pnpm build      # 프로덕션 빌드
 pnpm lint       # eslint
+pnpm test:e2e   # Playwright E2E (가이드: docs/testing.md)
 ```
 
 ## 구조
