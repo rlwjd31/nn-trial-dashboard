@@ -188,10 +188,22 @@ status는 `cva`로 tone 정의(neutral/active/done/warn). 실제 status 값 목�
   <SheetHeader><SheetTitle>Trial detail</SheetTitle></SheetHeader>
   {/* student_id·email·phone·level·mentor(id/name/gender)·interests·trial_date */}
   <Separator className="bg-glass-edge my-4" />
-  <Button className="w-full" asChild><a href={call_queue_url}>Call queue 이동</a></Button>
+  {/* CloudTalk 클릭 발신 (ct+tel:). call_queue_url 대체 — docs/cloudtalk-call-button.md */}
+  <CloudTalkCallButton targetNumber={detail.student_phone_number} />
 </SheetContent>
 ```
 `interests`는 Badge 나열.
+
+### 4.6 CloudTalk 발신 버튼
+`ct+tel:` 딥링크 → CloudTalk 데스크톱 앱 발신. **번호는 E.164 필수**(`toE164` 정규화 선행).
+Base UI `Button` 을 앵커로 렌더하므로 `render={<a … />}` + `nativeButton={false}`.
+전체 스펙: [cloudtalk-call-button.md](cloudtalk-call-button.md).
+```tsx
+<Button className="w-full" nativeButton={false}
+  render={<a href={`ct+tel:${encodeURIComponent(toE164(targetNumber))}`} />}>
+  <PhoneIcon /> 전화 걸기
+</Button>
+```
 
 ### 4.6 상태(Loading / Empty / Error)
 - **Loading**: `Skeleton`으로 행 placeholder.

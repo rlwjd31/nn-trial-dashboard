@@ -112,7 +112,9 @@ GCP Cloud SQL (Postgres)
 - mentor_id, mentor_name, mentor_gender
 - interests
 - trial_date
-- [Call queue 이동] 버튼
+- **CloudTalk 클릭 발신 버튼** (`ct+tel:` 딥링크) — `student_phone_number` 로 발신.
+  기존 "[Call queue 이동] 버튼" / `call_queue_url` 을 대체한다.
+  상세 스펙(번호 E.164 정규화 등): [cloudtalk-call-button.md](cloudtalk-call-button.md).
 
 ## 7. n8n API 스펙 (필수)
 공통: 요청 헤더 `x-api-key: <token>` 필수. 불일치 시 401.
@@ -159,10 +161,11 @@ GCP Cloud SQL (Postgres)
   "mentor_name": "string",
   "mentor_gender": "string",
   "interests": ["string"],
-  "trial_date": "2026-07-24",
-  "call_queue_url": "string"
+  "trial_date": "2026-07-24"
 }
 ```
+> `call_queue_url` 은 **폐기**됨. 발신은 상세 패널의 CloudTalk 클릭 발신 버튼
+> (`ct+tel:` + `student_phone_number`)이 담당한다 → [cloudtalk-call-button.md](cloudtalk-call-button.md).
 
 ### 7.3 Pre-trial 체크 저장
 - **PATCH** `/webhook/trials/precheck`
@@ -226,5 +229,5 @@ A. 쓰기(체크박스)가 있는 화면이라 서버 캐시가 방금 쓴 값�
 1. n8n 워크플로우 3개 구축(today / detail / precheck) + 토큰 검사.
 2. Next.js 프로젝트 + Route Handler 3개(프록시).
 3. 목록 화면 + 대시보드 카드 + TanStack Query 연동.
-4. 상세 패널 + call queue 이동.
+4. 상세 패널 + CloudTalk 클릭 발신(`ct+tel:`) — [cloudtalk-call-button.md](cloudtalk-call-button.md).
 5. 체크박스 optimistic update + 실패 롤백.

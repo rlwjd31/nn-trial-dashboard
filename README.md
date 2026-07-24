@@ -56,7 +56,7 @@ src/
 - [x] 마일스톤 2: Next.js 프로젝트 + Route Handler 3개(프록시 골격)
 - [ ] 마일스톤 1: n8n 워크플로우 3개 (프론트 이후 별도 진행)
 - [ ] 마일스톤 3: 목록 화면 + 대시보드 카드 + TanStack Query 연동
-- [ ] 마일스톤 4: 상세 패널 + call queue 이동
+- [ ] 마일스톤 4: 상세 패널 + CloudTalk 클릭 발신(`ct+tel:`) — docs/cloudtalk-call-button.md
 - [ ] 마일스톤 5: 체크박스 optimistic update + 롤백
 
 ## ⚠️ 구현 전 확정 필요 (PRD 섹션 9 — 데이터 계약)
