@@ -1,0 +1,5 @@
+# pnpm 11 은 의존성 빌드 스크립트 승인을 이 파일의 allowBuilds 에서 읽는다.
+# 이 프로젝트는 monorepo 가 아니므로 packages 항목은 없다 (설정 전용).
+allowBuilds:
+  sharp: true
+  unrs-resolver: true
