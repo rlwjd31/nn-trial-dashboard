@@ -1,0 +1,53 @@
+import { NextResponse } from "next/server";
+import { callN8n } from "@/lib/n8n";
+import { setMockNote } from "@/features/trials/mock/trials.mock";
+import type { NoteRequest } from "@/types/trial";
+
+export const dynamic = "force-dynamic";
+
+const USE_MOCK = !process.env.N8N_BASE_URL;
+
+// PATCH /api/trials/note  ->  n8n PATCH /webhook/trials/note
+// 학생 추가정보(세일즈 메모) 저장. body: { trial_id, note }
+export async function PATCH(req: Request) {
+  let body: NoteRequest;
+  try {
+    body = (await req.json()) as NoteRequest;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const { trial_id, note } = body ?? {};
+  if (!trial_id || typeof note !== "string") {
+    return NextResponse.json(
+      { error: "Body must be { trial_id: string, note: string }" },
+      { status: 400 },
+    );
+  }
+
+  if (USE_MOCK) {
+    const ok = setMockNote(trial_id, note);
+    if (!ok) {
+      return NextResponse.json({ error: "Trial not found" }, { status: 404 });
+    }
+    return NextResponse.json(
+      { ok: true, trial_id, note },
+      { headers: { "cache-control": "no-store" } },
+    );
+  }
+
+  try {
+    const res = await callN8n("/webhook/trials/note", {
+      method: "PATCH",
+      body: JSON.stringify({ trial_id, note }),
+    });
+    const data = await res.json();
+    return NextResponse.json(data, {
+      status: res.status,
+      headers: { "cache-control": "no-store" },
+    });
+  } catch (err) {
+    console.error("[/api/trials/note] proxy error:", err);
+    return NextResponse.json({ error: "Failed to save note" }, { status: 502 });
+  }
+}

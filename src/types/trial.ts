@@ -42,6 +42,8 @@ export interface TrialDetail {
   /** ISO8601 date. 예: "2026-07-24" */
   trial_date: string;
   call_queue_url: string;
+  /** 학생 관련 추가 정보 / 세일즈 메모 (sales."TrialDashboardState"."salesNote"). 없으면 미기록. */
+  sales_note?: string | null;
 }
 
 /** precheck 저장 단계 */
@@ -59,6 +61,19 @@ export interface PrecheckResponse {
   trial_id: string;
   stage: PrecheckStage;
   checked: boolean;
+}
+
+/** PATCH /webhook/trials/note body (= /api/trials/note) — 학생 추가정보 저장 */
+export interface NoteRequest {
+  trial_id: string;
+  /** 자유서술 메모. 빈 문자열이면 기록 삭제로 취급. */
+  note: string;
+}
+
+export interface NoteResponse {
+  ok: true;
+  trial_id: string;
+  note: string;
 }
 
 /** n8n / Route Handler 공통 에러 응답 */

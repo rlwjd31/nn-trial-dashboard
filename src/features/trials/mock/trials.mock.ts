@@ -333,6 +333,14 @@ const SEED: TrialSeed[] = [
 // n8n 도입 전까지 PATCH 결과를 이 Map 에 반영해, 목록 재조회 시에도 값이 유지되게 한다.
 const precheckOverrides = new Map<string, Partial<Record<PrecheckStage, boolean>>>();
 
+// ── 학생 추가정보(세일즈 메모) 인메모리 저장 ─────────────────────────────────
+// 실제로는 sales."TrialDashboardState"."salesNote". 초기 시드 + PATCH /note 결과를 반영.
+const salesNotes = new Map<string, string>([
+  ["48213", "결제 완료. 다음 정규수업 화/목 저녁 선호. 부모님 영어 학습 열의 높음."],
+  ["48224", "레벨 대비 자신감 낮음 — 첫 수업 아이스브레이킹 여유있게 요청."],
+  ["48236", "형이 이미 수강 중(만족). 가격 문의 있었음 → 프로모션 안내 예정."],
+]);
+
 /** KST 기준 오늘 날짜 문자열 "YYYY-MM-DD" */
 function todayKstDate(now: Date): string {
   // en-CA 로케일 → "YYYY-MM-DD" 형식
@@ -410,6 +418,7 @@ export function getMockTrialDetail(
     interests: seed.interests,
     trial_date: todayKstDate(now),
     call_queue_url: `https://app.naonow.com/sales/call-queue/${seed.call_queue_id}`,
+    sales_note: salesNotes.get(seed.trial_id) ?? null,
   };
 }
 
@@ -424,5 +433,15 @@ export function setMockPrecheck(
   const current = precheckOverrides.get(trialId) ?? {};
   current[stage] = checked;
   precheckOverrides.set(trialId, current);
+  return true;
+}
+
+/** PATCH /webhook/trials/note 대체 — 학생 추가정보 저장 후 에코 (없으면 null 반환) */
+export function setMockNote(trialId: string, note: string): boolean {
+  const seed = SEED.find((s) => s.trial_id === trialId);
+  if (!seed) return false;
+  const trimmed = note.trim();
+  if (trimmed) salesNotes.set(trialId, trimmed);
+  else salesNotes.delete(trialId);
   return true;
 }
