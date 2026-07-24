@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { callN8n } from "@/lib/n8n";
+import { getMockTrialDetail } from "@/features/trials/mock/trials.mock";
 
 export const dynamic = "force-dynamic";
+
+const USE_MOCK = !process.env.N8N_BASE_URL;
 
 // GET /api/trials/[id]  ->  n8n GET /webhook/trials/detail?trial_id=<id>
 export async function GET(
@@ -11,6 +14,16 @@ export async function GET(
   const { id } = await params;
   if (!id) {
     return NextResponse.json({ error: "Missing trial id" }, { status: 400 });
+  }
+
+  if (USE_MOCK) {
+    const detail = getMockTrialDetail(id);
+    if (!detail) {
+      return NextResponse.json({ error: "Trial not found" }, { status: 404 });
+    }
+    return NextResponse.json(detail, {
+      headers: { "cache-control": "no-store" },
+    });
   }
 
   try {

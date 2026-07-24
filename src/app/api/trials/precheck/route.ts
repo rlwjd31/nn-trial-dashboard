@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { callN8n } from "@/lib/n8n";
+import { setMockPrecheck } from "@/features/trials/mock/trials.mock";
 import type { PrecheckRequest } from "@/types/trial";
 
 export const dynamic = "force-dynamic";
+
+const USE_MOCK = !process.env.N8N_BASE_URL;
 
 // PATCH /api/trials/precheck  ->  n8n PATCH /webhook/trials/precheck
 export async function PATCH(req: Request) {
@@ -18,6 +21,17 @@ export async function PATCH(req: Request) {
     return NextResponse.json(
       { error: "Body must be { trial_id: string, stage: 1|2|3, checked: boolean }" },
       { status: 400 },
+    );
+  }
+
+  if (USE_MOCK) {
+    const ok = setMockPrecheck(trial_id, stage, checked);
+    if (!ok) {
+      return NextResponse.json({ error: "Trial not found" }, { status: 404 });
+    }
+    return NextResponse.json(
+      { ok: true, trial_id, stage, checked },
+      { headers: { "cache-control": "no-store" } },
     );
   }
 
