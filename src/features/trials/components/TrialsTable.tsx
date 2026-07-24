@@ -22,10 +22,10 @@ const STAGES = [1, 2, 3] as const;
 
 export function TrialsTable({ trials, onRowClick }: Props) {
   return (
-    <div className="glass overflow-hidden rounded-xl">
+    <div className="glass overflow-hidden rounded-2xl">
       <Table>
-        <TableHeader>
-          <TableRow className="hover:bg-transparent">
+        <TableHeader className="[&_tr]:border-glass-edge-strong">
+          <TableRow className="bg-white/5 hover:bg-white/5">
             <TableHead>Time</TableHead>
             <TableHead>Student</TableHead>
             <TableHead>Email</TableHead>
@@ -44,7 +44,7 @@ export function TrialsTable({ trials, onRowClick }: Props) {
               <TableRow
                 key={t.trial_id}
                 onClick={() => onRowClick(t.trial_id)}
-                className="cursor-pointer"
+                className="cursor-pointer border-white/5 hover:bg-white/5"
               >
                 <TableCell className="font-medium tabular-nums">
                   {formatTrialTime(t.trial_time)}

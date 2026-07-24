@@ -132,13 +132,17 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 
-  /* Glass (dark — 기본 테마, PRD §6.0) : 어두운 배경 위 반투명 흰 필름 */
-  --glass: oklch(1 0 0 / 6%);
-  --glass-strong: oklch(1 0 0 / 10%);
-  --glass-edge: oklch(1 0 0 / 12%);
-  --glass-edge-strong: oklch(1 0 0 / 18%);
-  --glass-blur: 16px;
-  --glass-shadow: 0 8px 32px oklch(0 0 0 / 37%), inset 0 1px 0 0 oklch(1 0 0 / 8%);
+  /* Glass (dark — 기본 테마, PRD §6.0) : 컬러 배경 위 프로스티드 유리 필름.
+     유리가 "보이려면" ① 표면 alpha가 충분하고 ② 뒤에 선명한 색이 있어야 한다. */
+  --glass: oklch(1 0 0 / 10%);
+  --glass-strong: oklch(1 0 0 / 16%);
+  --glass-edge: oklch(1 0 0 / 28%);
+  --glass-edge-strong: oklch(1 0 0 / 42%);
+  --glass-blur: 22px;
+  --glass-shadow:
+    0 12px 40px oklch(0 0 0 / 45%),
+    inset 0 1px 0 0 oklch(1 0 0 / 28%),
+    inset 0 0 0 1px oklch(1 0 0 / 4%);
 }
 
 @layer base {
@@ -146,12 +150,17 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
-    /* Glass는 뒤에 색이 있어야 보인다 → 은은한 저채도 blob (docs/design.md §3.2) */
+    @apply text-foreground;
+    /* 딥 바이올렛(퍼플) 단일 계열 그라데이션 + "확실한 유리"를 위한 소프트 광원 오브.
+       모든 레이어를 보라 계열(285~300)로 통일해 촌스러움을 피한다(네온 금지, 깊고 차분하게).
+       오브는 카드/테이블 '뒤'에 깔려 backdrop-blur 가 프로스팅할 대상을 만든다
+       (유리 안=흐린 보라, 밖=선명 → 진짜 유리감). 고채도/다색은 금지 — §3.2. */
+    background-color: oklch(0.16 0.045 292);
     background-image:
-      radial-gradient(60% 50% at 20% 0%,   oklch(0.488 0.243 264 / 18%) 0%, transparent 60%),
-      radial-gradient(50% 40% at 100% 20%,  oklch(0.6 0.16 20 / 14%)    0%, transparent 55%),
-      radial-gradient(70% 60% at 50% 100%,  oklch(0.7 0.15 160 / 10%)   0%, transparent 60%);
+      radial-gradient(42% 40% at 82% 16%, oklch(0.58 0.16 300 / 40%) 0%, transparent 60%),
+      radial-gradient(44% 44% at 14% 82%, oklch(0.5 0.15 284 / 34%) 0%, transparent 62%),
+      radial-gradient(120% 90% at 50% -10%, oklch(0.42 0.13 293 / 82%) 0%, transparent 58%),
+      linear-gradient(160deg, oklch(0.22 0.07 290) 0%, oklch(0.13 0.035 288) 100%);
     background-attachment: fixed;
   }
   html {
@@ -161,11 +170,24 @@
 
 @layer components {
   /* 유리 표면 재사용 클래스 — 컴포넌트에서 유틸 나열 대신 이걸 쓴다.
-     glass: 기본 표면(카드·표 컨테이너) / glass-strong: 상위 표면(Sheet·팝오버 등 가독성 필요) */
+     glass: 기본 표면(카드·표 컨테이너) / glass-strong: 상위 표면(Sheet·팝오버 등 가독성 필요).
+
+     ⚠ shadcn <Card>/<SheetContent> 는 불투명 bg-card/bg-popover 를 갖고 있어
+        .glass 의 배경을 덮어쓴다. 유리 표면에는 이 컴포넌트의 bg 를 쓰지 말고
+        plain <div>.glass 를 쓰거나, bg 를 !bg-transparent 로 지운 뒤 .glass 를 얹는다.
+     backdrop-filter 는 유틸(@apply)이 아니라 명시 선언으로 둬서 saturate 까지 확실히 건다. */
   .glass {
-    @apply bg-glass backdrop-blur-glass border border-glass-edge shadow-glass;
+    background-color: var(--glass);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+    backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--glass-shadow);
   }
   .glass-strong {
-    @apply bg-glass-strong backdrop-blur-glass border border-glass-edge-strong shadow-glass;
+    background-color: var(--glass-strong);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+    backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+    border: 1px solid var(--glass-edge-strong);
+    box-shadow: var(--glass-shadow);
   }
 }

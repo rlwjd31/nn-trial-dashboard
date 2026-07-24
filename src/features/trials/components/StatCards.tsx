@@ -1,6 +1,5 @@
 "use client";
 
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { TrialStats } from "../lib/aggregate";
 
@@ -27,21 +26,24 @@ export function StatCards({ stats, loading }: Props) {
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       {TILES.map((tile) => (
-        <Card key={tile.key} className="glass gap-1 px-4 py-3">
+        <div
+          key={tile.key}
+          className="glass flex flex-col gap-1 rounded-2xl px-4 py-4"
+        >
           <p className="text-xs font-medium text-muted-foreground">
             {tile.label}
           </p>
           {loading || !stats ? (
-            <Skeleton className="mt-1 h-8 w-12" />
+            <Skeleton className="mt-1 h-9 w-12" />
           ) : (
-            <p className="font-heading text-3xl font-semibold tabular-nums">
+            <p className="font-heading text-4xl font-semibold tabular-nums text-foreground">
               {stats[tile.key]}
             </p>
           )}
           {tile.hint && (
             <p className="text-[11px] text-muted-foreground/70">{tile.hint}</p>
           )}
-        </Card>
+        </div>
       ))}
     </div>
   );

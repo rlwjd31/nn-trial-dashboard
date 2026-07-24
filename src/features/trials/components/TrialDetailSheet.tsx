@@ -69,7 +69,7 @@ export function TrialDetailSheet({ trialId, open, onOpenChange }: Props) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="glass-strong w-full gap-0 sm:max-w-md">
+      <SheetContent className="glass-strong bg-glass-strong! w-full gap-0 sm:max-w-md">
         <SheetHeader>
           <SheetTitle>Trial 상세</SheetTitle>
           <SheetDescription>
