@@ -17,6 +17,7 @@ import type { TrialDetail } from "@/types/trial";
 import { CHIP_NEUTRAL } from "../lib/format";
 import { useTrialDetail } from "../hooks/useTrialDetail";
 import { CloudTalkCallButton } from "./CloudTalkCallButton";
+import { NotesEditor } from "./NotesEditor";
 
 interface Props {
   trialId: string | null;
@@ -127,6 +128,7 @@ export function TrialDetailSheet({ trialId, open, onOpenChange }: Props) {
             </p>
           )}
           {detail && <DetailBody detail={detail} />}
+          {detail && <NotesEditor trialId={trialId} />}
         </div>
 
         <div className="flex flex-col gap-2 border-t border-glass-edge p-4">

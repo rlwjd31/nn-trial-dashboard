@@ -191,4 +191,24 @@
     border: 1px solid var(--glass-edge-strong);
     box-shadow: var(--glass-shadow);
   }
+
+  /* PTC 메모(MDXEditor) 콘텐츠 타이포 복원.
+     MDXEditor 는 헤딩/목록 스타일을 앱에 위임하는데, Tailwind Preflight 가 이를
+     reset 하므로 여기서 되살린다(그래서 `# ` 변환 후 헤딩이 안 보이던 문제 해결). */
+  .ptc-notes h1 { @apply mt-3 mb-2 text-2xl font-bold; }
+  .ptc-notes h2 { @apply mt-3 mb-2 text-xl font-semibold; }
+  .ptc-notes h3 { @apply mt-2 mb-1 text-lg font-semibold; }
+  .ptc-notes h4 { @apply mt-2 mb-1 text-base font-semibold; }
+  .ptc-notes p { @apply my-1.5 leading-relaxed; }
+  .ptc-notes ul { @apply my-1.5 list-disc pl-5; }
+  .ptc-notes ol { @apply my-1.5 list-decimal pl-5; }
+  .ptc-notes li { @apply my-0.5; }
+  .ptc-notes blockquote {
+    @apply my-2 border-l-2 border-white/30 pl-3 italic text-muted-foreground;
+  }
+  .ptc-notes a { @apply text-primary underline underline-offset-2; }
+  .ptc-notes code { @apply rounded bg-white/10 px-1 py-0.5 text-[0.85em]; }
+  .ptc-notes strong { @apply font-bold; }
+  .ptc-notes em { @apply italic; }
+  .ptc-notes hr { @apply my-3 border-t border-white/20; }
 }
