@@ -60,8 +60,10 @@ UI·스타일·컴포넌트 작업 **전에** 이 문서를 먼저 읽는다. �
 7. **데이터 표현은 의미를 담는다** — 같은 수치도 표현 방식(숫자 vs 진행률 vs 배지)에 따라 다른 이야기를 한다. PRD 카드/상태는 "판독 속도" 우선으로 표현.
 
 ### 무드
-- 배경: 어두운 무채색 + 낮은 채도 컬러 blob(포인트). 단색 흰/검 지양.
-- 표면: 반투명 유리(§3.2). 위로 갈수록 blur·명도↑.
+- 배경: **딥 바이올렛(퍼플) 단일 계열 그라데이션**(hue 285~300, 깊고 차분하게 · 네온 금지).
+  상단 광원 + 아래로 어두워지는 명도 변화. 단색 흰/검, 다색 blob(촌스러움) 모두 지양.
+  유리 효과는 배경의 화려함이 아니라 **표면 자체(edge 하이라이트·blur·shadow) + 뒤 오브 프로스팅**으로 낸다.
+- 표면: 반투명 프로스티드 유리(§3.2). 위로 갈수록 blur·명도↑. `saturate`로 뒤 색을 끌어올린다.
 - 여백: 넉넉하게. 답답함보다 여유. 단, 표는 데이터 밀도를 확보.
 
 ---
@@ -94,7 +96,7 @@ UI·스타일·컴포넌트 작업 **전에** 이 문서를 먼저 읽는다. �
 **표면 계층(elevation) 모델** — 컴포넌트는 깊이에 맞는 표면을 고른다.
 | 계층 | 클래스 | 용도 |
 |---|---|---|
-| L0 배경 | (body gradient) | 페이지 최하단, 저채도 blob |
+| L0 배경 | (body gradient) | 페이지 최하단, **딥 바이올렛 단일 계열 그라데이션** + 동일 계열 오브 |
 | L1 기본 표면 | **`.glass`** | 카드, 표 컨테이너 등 일반 표면 |
 | L2 상위 표면 | **`.glass-strong`** | Sheet(상세)·팝오버·표 헤더 등 가독성 필요한 떠 있는 표면 |
 
@@ -104,17 +106,24 @@ UI·스타일·컴포넌트 작업 **전에** 이 문서를 먼저 읽는다. �
 **토큰 값** (다크=기본 / 라이트=대비용 최소값):
 | 토큰 | dark | light | 역할 |
 |---|---|---|---|
-| `--glass` | `oklch(1 0 0 / 6%)` | `oklch(1 0 0 / 55%)` | L1 표면 배경 |
-| `--glass-strong` | `oklch(1 0 0 / 10%)` | `oklch(1 0 0 / 72%)` | L2 표면 배경 |
-| `--glass-edge` | `oklch(1 0 0 / 12%)` | `oklch(0.145 0 0 / 8%)` | 테두리(기본) |
-| `--glass-edge-strong` | `oklch(1 0 0 / 18%)` | `oklch(0.145 0 0 / 12%)` | 테두리(강) |
-| `--glass-blur` | `16px` | `16px` | backdrop blur 강도 |
-| `--glass-shadow` | `0 8px 32px …/37%` + inset 상단 하이라이트 | `…/12%` + inset | 소프트 그림자 + 유리 상단 광택 |
+| `--glass` | `oklch(1 0 0 / 10%)` | `oklch(1 0 0 / 55%)` | L1 표면 배경 |
+| `--glass-strong` | `oklch(1 0 0 / 16%)` | `oklch(1 0 0 / 72%)` | L2 표면 배경 |
+| `--glass-edge` | `oklch(1 0 0 / 28%)` | `oklch(0.145 0 0 / 8%)` | 테두리(기본) |
+| `--glass-edge-strong` | `oklch(1 0 0 / 42%)` | `oklch(0.145 0 0 / 12%)` | 테두리(강) |
+| `--glass-blur` | `22px` | `16px` | backdrop blur 강도 |
+| `--glass-shadow` | `0 12px 40px …/45%` + inset 상단 하이라이트 2겹 | `…/12%` + inset | 소프트 그림자 + 유리 상단 광택 |
 
-- `--glass-shadow`의 **inset 하이라이트**(`inset 0 1px 0 0 oklch(1 0 0 / 8%)`)가 유리 윗변에 빛
+- `--glass-shadow`의 **inset 하이라이트**(`inset 0 1px 0 0 oklch(1 0 0 / 28%)`)가 유리 윗변에 빛
   반사를 만들어 "진짜 유리" 질감을 낸다. `.glass` 계열이면 자동 적용됨.
-- body gradient가 있어야 blur가 보인다. 저채도 blob 3개(파랑/레드/그린 계열, alpha 낮음).
-- blur를 더 약하게 쓰고 싶으면 컴포넌트에서 `backdrop-blur-sm` 등으로 override.
+- `.glass`/`.glass-strong` 은 `backdrop-filter: blur() saturate(180%)` 를 **명시 선언**한다
+  (유틸 @apply 아님) — saturate 로 뒤 blob 색을 끌어올려 프로스티드 느낌을 강화.
+- body gradient가 있어야 blur가 보인다. **딥 바이올렛 베이스 + 동일 계열(285~300) 소프트 광원
+  오브 1~2개**를 카드/테이블 '뒤'에 배치 → backdrop-blur 가 실제로 프로스팅할 대상이 생겨
+  "확실한 유리"가 된다. 다색·네온·고채도는 촌스럽고 가독성을 해치므로 금지(전 레이어 단일 계열).
+- ⚠ **shadcn `<Card>`/`<SheetContent>` 함정**: 이들은 불투명 `bg-card`/`bg-popover` 를
+  갖고 있어 `.glass` 의 반투명 배경을 **덮어써서 유리가 사라진다**. 유리 표면은
+  plain `<div className="glass">` 를 쓰거나(권장), 불가피하면 `!bg-glass`/`!bg-glass-strong`
+  important 유틸로 배경을 강제 override 한다(Tailwind v4 → **접미사** `bg-glass!` 문법). (§4 레시피 참조)
 
 정의 위치: `globals.css`의 `:root`/`.dark`(값) · `@theme inline`(유틸 매핑) · `@layer base`(body gradient) · `@layer components`(`.glass`/`.glass-strong`).
 
@@ -130,13 +139,14 @@ UI·스타일·컴포넌트 작업 **전에** 이 문서를 먼저 읽는다. �
 설치된 shadcn 컴포넌트를 베이스로, 글래스는 className으로 덧입힌다. **없는 컴포넌트를 raw HTML로 새로 만들지 않는다.**
 
 ### 4.1 GlassCard (대시보드 상단 카드)
+⚠ shadcn `<Card>` 는 불투명 `bg-card` 때문에 유리가 사라진다(§3.2 함정). **plain `<div className="glass">` 를 쓴다.**
 ```tsx
-<Card className={cn("glass rounded-2xl")}>
-  <CardHeader><CardTitle className="text-sm font-medium text-muted-foreground">Today's trials</CardTitle></CardHeader>
-  <CardContent><div className="text-3xl font-semibold tabular-nums">{count}</div></CardContent>
-</Card>
+<div className={cn("glass rounded-2xl px-4 py-4 flex flex-col gap-1")}>
+  <p className="text-xs font-medium text-muted-foreground">Today's trials</p>
+  <p className="font-heading text-4xl font-semibold tabular-nums text-foreground">{count}</p>
+</div>
 ```
-상단 4카드(Today's / Pre-call done / Post-call done / Converted) 동일 레시피, 수치만 교체. 그리드 `grid-cols-2 lg:grid-cols-4 gap-4`.
+상단 4카드(Today's / Pre-call done / Post-call done / Converted) 동일 레시피, 수치만 교체. 그리드 `grid-cols-2 lg:grid-cols-4 gap-3`.
 
 ### 4.2 Data Table (목록)
 컨테이너만 글래스. **표 셀에는 blur/반투명 남용 금지**(가독성).
@@ -172,8 +182,9 @@ status는 `cva`로 tone 정의(neutral/active/done/warn). 실제 status 값 목�
 
 ### 4.5 Detail Panel (행 클릭)
 `Sheet` 우측 슬라이드. 판독 목적 → `glass-strong`(대비 강).
+⚠ `<SheetContent>` 는 불투명 `bg-popover` 를 가지므로 `bg-glass-strong!` important(Tailwind v4 접미사) 로 배경을 강제 override 해야 유리가 보인다(§3.2 함정).
 ```tsx
-<SheetContent side="right" className={cn("glass-strong sm:max-w-md")}>
+<SheetContent side="right" className={cn("glass-strong bg-glass-strong! sm:max-w-md")}>
   <SheetHeader><SheetTitle>Trial detail</SheetTitle></SheetHeader>
   {/* student_id·email·phone·level·mentor(id/name/gender)·interests·trial_date */}
   <Separator className="bg-glass-edge my-4" />
