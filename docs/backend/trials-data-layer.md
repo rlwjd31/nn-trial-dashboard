@@ -212,6 +212,18 @@ RETURNING d."lessonId"::text AS trial_id, d."salesNote" AS note;
 | D1 | 신규 스키마/테이블 명, 생성 권한 | `sales."TrialDashboardState"` 제안 | 소유자 승인(프로덕션 DDL) |
 | D2 | 추가정보 = 덮어쓰기(A) vs 이력(B) | (A) 단일 `salesNote` | DECISION |
 
+### 4-1. 라이브 검증 결과 (2026-07-24, cred=automation_coupons)
+읽기 전용 introspection 으로 확인 (임시 워크플로우, 실행 후 아카이브):
+- **DB=`naonow`(프로덕션)**, search_path `public`. `can_create_public=true`, `can_create_db=false`
+  → 신규 스키마(sales) 불가 → 테이블은 **`public."TrialDashboardState"`** ([ddl.sql](./ddl.sql), DB 소유자가 생성).
+- **V1 해소**: status enum = `canceled`(L1). 전체 `{scheduled,in_progress,canceled,completed,paid,approved,rescheduled}`.
+- **V2 해소**: `Mentors`(public)에 `firstName,lastName,tier,gender` 존재 → mentor_name=`firstName‖lastName`.
+- **V4 해소**: `CallQueues.studentId` 존재 → studentId 로 조인(LATERAL 최신 1건).
+- **V3 잔여**: `Users` 에 이름 컬럼 없음 → sales_rep_name 은 email local-part 로 임시 대체.
+- 오늘 trial 57건 관측(쿼리 정상).
+
+최종 워크플로우 SDK: [n8n-trials-api.workflow.ts](./n8n-trials-api.workflow.ts) (validate 통과, node 15).
+
 ---
 
 ## 5. API 계약 변경 (PRD §7·§8 대비 delta)
