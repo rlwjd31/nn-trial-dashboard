@@ -111,7 +111,8 @@
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
+  /* 보라 배경 위 가독성 — dim 텍스트를 더 밝게(+살짝 쿨 틴트) */
+  --muted-foreground: oklch(0.82 0.015 292);
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { TrialDetail } from "@/types/trial";
+import { CHIP_NEUTRAL } from "../lib/format";
 import { useTrialDetail } from "../hooks/useTrialDetail";
 
 interface Props {
@@ -47,7 +48,7 @@ function DetailBody({ detail }: { detail: TrialDetail }) {
           detail.interests.length ? (
             <span className="flex flex-wrap gap-1">
               {detail.interests.map((i) => (
-                <Badge key={i} variant="secondary">
+                <Badge key={i} className={CHIP_NEUTRAL}>
                   {i}
                 </Badge>
               ))}
@@ -98,6 +99,7 @@ export function TrialDetailSheet({ trialId, open, onOpenChange }: Props) {
           <Button
             className="w-full"
             disabled={!detail?.call_queue_url}
+            nativeButton={!detail?.call_queue_url}
             render={
               detail?.call_queue_url ? (
                 <a

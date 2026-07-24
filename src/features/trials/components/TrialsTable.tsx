@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 import type { TrialListItem } from "@/types/trial";
 import { formatTrialTime, isCanceled, statusMeta, tierMeta } from "../lib/format";
 import { PrecheckCheckbox } from "./PrecheckCheckbox";
@@ -22,7 +23,15 @@ const STAGES = [1, 2, 3] as const;
 
 export function TrialsTable({ trials, onRowClick }: Props) {
   return (
-    <div className="glass overflow-hidden rounded-2xl">
+    <div
+      className={cn(
+        "glass overflow-hidden rounded-2xl",
+        // 가독성용 여백: 셀 좌우/상하 + 헤더 높이 + 바깥쪽 거터
+        "[&_th]:h-13 [&_th]:px-5 [&_td]:px-5 [&_td]:py-4",
+        "[&_th:first-child]:pl-6 [&_td:first-child]:pl-6",
+        "[&_th:last-child]:pr-6 [&_td:last-child]:pr-6",
+      )}
+    >
       <Table>
         <TableHeader className="[&_tr]:border-glass-edge-strong">
           <TableRow className="bg-white/5 hover:bg-white/5">
@@ -59,13 +68,13 @@ export function TrialsTable({ trials, onRowClick }: Props) {
                   {t.student_phone_number}
                 </TableCell>
                 <TableCell>
-                  <span className="flex items-center gap-1.5">
-                    {t.mentor_name}
-                    <Badge variant={tier.variant}>{tier.label}</Badge>
+                  <span className="flex items-center gap-2">
+                    <span className="text-foreground">{t.mentor_name}</span>
+                    <Badge className={tier.className}>{tier.label}</Badge>
                   </span>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={status.variant}>{status.label}</Badge>
+                  <Badge className={status.className}>{status.label}</Badge>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center justify-center gap-3">
