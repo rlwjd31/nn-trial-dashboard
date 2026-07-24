@@ -87,47 +87,36 @@ UI·스타일·컴포넌트 작업 **전에** 이 문서를 먼저 읽는다. �
 - **타이포**: `--font-sans`(기본), `--font-mono`(수치·ID), `--font-heading`.
 - **수치 정렬**: 카운트·시간 등 숫자는 `tabular-nums`.
 
-### 3.2 Glassmorphism 토큰 (globals.css에 추가 필요)
-현재 글래스 전용 토큰이 없다. 아래 블록을 `globals.css`에 추가하면
-`bg-glass` `bg-glass-strong` `border-glass-edge` `shadow-glass` `backdrop-blur-glass`가 생성된다.
+### 3.2 Glassmorphism 토큰 (✅ globals.css에 구현 완료)
+아래 토큰이 `globals.css`에 정의되어 있고, 빌드로 유틸리티 생성이 검증됨.
+컴포넌트는 개별 값을 다루지 말고 **`.glass` / `.glass-strong` 클래스만** 쓴다.
 
-> ⚠️ `globals.css`는 다른 세션이 셋팅 중일 수 있음 → 병합 전 충돌 확인 후 추가.
+**표면 계층(elevation) 모델** — 컴포넌트는 깊이에 맞는 표면을 고른다.
+| 계층 | 클래스 | 용도 |
+|---|---|---|
+| L0 배경 | (body gradient) | 페이지 최하단, 저채도 blob |
+| L1 기본 표면 | **`.glass`** | 카드, 표 컨테이너 등 일반 표면 |
+| L2 상위 표면 | **`.glass-strong`** | Sheet(상세)·팝오버·표 헤더 등 가독성 필요한 떠 있는 표면 |
 
-```css
-/* :root (light — MVP 비목표, 대비용 최소값) */
-:root {
-  --glass: oklch(1 0 0 / 55%); --glass-strong: oklch(1 0 0 / 70%);
-  --glass-edge: oklch(0.145 0 0 / 8%);
-  --glass-shadow: 0 8px 32px oklch(0.145 0 0 / 12%); --glass-blur: 16px;
-}
-/* .dark (기본 테마) — 어두운 배경 위 반투명 흰 필름 */
-.dark {
-  --glass: oklch(1 0 0 / 6%); --glass-strong: oklch(1 0 0 / 10%);
-  --glass-edge: oklch(1 0 0 / 15%);
-  --glass-shadow: 0 8px 32px oklch(0 0 0 / 37%); --glass-blur: 16px;
-}
-@theme inline { /* ...기존 유지... */
-  --color-glass: var(--glass); --color-glass-strong: var(--glass-strong);
-  --color-glass-edge: var(--glass-edge);
-  --shadow-glass: var(--glass-shadow); --blur-glass: var(--glass-blur);
-}
-/* 글래스가 "보이려면" 뒤에 색이 있어야 한다 → body에 은은한 gradient */
-@layer base {
-  body {
-    @apply bg-background text-foreground;
-    background-image:
-      radial-gradient(60% 50% at 20% 0%,  oklch(0.488 0.243 264 / 18%) 0%, transparent 60%),
-      radial-gradient(50% 40% at 100% 20%, oklch(0.6 0.16 20 / 14%)  0%, transparent 55%),
-      radial-gradient(70% 60% at 50% 100%, oklch(0.7 0.15 160 / 10%) 0%, transparent 60%);
-    background-attachment: fixed;
-  }
-}
-/* 재사용 표면 클래스 — 매번 유틸 나열 금지 */
-@layer components {
-  .glass        { @apply bg-glass backdrop-blur-glass border border-glass-edge shadow-glass; }
-  .glass-strong { @apply bg-glass-strong backdrop-blur-glass border border-glass-edge shadow-glass; }
-}
-```
+**생성 유틸리티** (직접 조합이 필요할 때만): `bg-glass` `bg-glass-strong`
+`border-glass-edge` `border-glass-edge-strong` `shadow-glass` `backdrop-blur-glass`.
+
+**토큰 값** (다크=기본 / 라이트=대비용 최소값):
+| 토큰 | dark | light | 역할 |
+|---|---|---|---|
+| `--glass` | `oklch(1 0 0 / 6%)` | `oklch(1 0 0 / 55%)` | L1 표면 배경 |
+| `--glass-strong` | `oklch(1 0 0 / 10%)` | `oklch(1 0 0 / 72%)` | L2 표면 배경 |
+| `--glass-edge` | `oklch(1 0 0 / 12%)` | `oklch(0.145 0 0 / 8%)` | 테두리(기본) |
+| `--glass-edge-strong` | `oklch(1 0 0 / 18%)` | `oklch(0.145 0 0 / 12%)` | 테두리(강) |
+| `--glass-blur` | `16px` | `16px` | backdrop blur 강도 |
+| `--glass-shadow` | `0 8px 32px …/37%` + inset 상단 하이라이트 | `…/12%` + inset | 소프트 그림자 + 유리 상단 광택 |
+
+- `--glass-shadow`의 **inset 하이라이트**(`inset 0 1px 0 0 oklch(1 0 0 / 8%)`)가 유리 윗변에 빛
+  반사를 만들어 "진짜 유리" 질감을 낸다. `.glass` 계열이면 자동 적용됨.
+- body gradient가 있어야 blur가 보인다. 저채도 blob 3개(파랑/레드/그린 계열, alpha 낮음).
+- blur를 더 약하게 쓰고 싶으면 컴포넌트에서 `backdrop-blur-sm` 등으로 override.
+
+정의 위치: `globals.css`의 `:root`/`.dark`(값) · `@theme inline`(유틸 매핑) · `@layer base`(body gradient) · `@layer components`(`.glass`/`.glass-strong`).
 
 ### 3.3 모션
 - 빠른 상호작용 **150ms**, 표준 전환 **300ms**. `transition-colors`/`duration-300`.
