@@ -8,26 +8,26 @@
 Sales rep이 PTC 콜을 하며 고객 상담 내용을 상세 패널에서 즉시 기록.
 마크다운 문법으로 작성하면 렌더된 결과를 볼 수 있어야 한다(목록/굵게/체크리스트 등).
 
-## 2. 라이브러리 선택 (조사 결과)
+## 2. 라이브러리 선택 (조사 + 요구사항 확정)
+
+> 요구 UX 확정: **분할 미리보기가 아니라 Notion/Typora식 "입력 즉시 인플레이스 변환"**
+> (예: `# Title` 타이핑 순간 그 자리에서 H1로 렌더). → WYSIWYG 에디터가 정답.
 
 | 후보 | 성격 | 적합성 |
 |---|---|---|
-| **`@uiw/react-md-editor`** ✅ 권장 | 라이브 프리뷰 **에디터**(작성+미리보기). textarea 기반(무거운 코드에디터 의존 없음), MIT, React 19/Next 검증, 다크모드(`data-color-mode`) | "작성 즉시 렌더" 요구에 가장 직접적. 도입 비용 최소 |
-| `react-markdown` (+ shadcn `Textarea`) | **렌더 전용** 컴포넌트 + 직접 만든 Write/Preview 탭 | 가장 가볍고 글래스 테마에 100% 맞춤 가능. 단, 에디터 셸(탭·레이아웃)을 직접 구현 |
-| `MDXEditor` | WYSIWYG(노션식) | UX 좋지만 무겁고 스타일이 강해 글래스 톤과 충돌 → 제외 |
-| `Milkdown` | ProseMirror 플러그인 프레임워크 | 과설계 → 제외 |
+| **`@mdxeditor/editor`** ✅ 채택 | **WYSIWYG**(노션식) 마크다운 에디터. `markdownShortcutPlugin` 이 `# `·`- `·`**` 등을 입력 즉시 변환. Lexical 기반, React 18/19 | **인플레이스 렌더 요구를 유일하게 충족.** 좁은 시트에서도 단일 pane |
+| `@uiw/react-md-editor` | textarea + **별도** 프리뷰(edit/live/preview) | 인플레이스 변환 불가(분할 미리보기라 좁은 시트에 부적합) → 제외 |
+| `react-markdown` (+ `Textarea`) | 렌더 전용 + 직접 만든 탭 | 인플레이스 아님 → 제외 |
+| `Milkdown` | ProseMirror 프레임워크 | 과설계 → 제외 |
 
 ### 결정
-- **1순위: `@uiw/react-md-editor`** — 요구사항("작성하면 알아서 render")을 가장 적은 코드로 충족.
-  설치: `pnpm add @uiw/react-md-editor`.
-  - ⚠ 이 컴포넌트는 `window` 참조 → **클라이언트 전용**. Next App Router에서는
-    `TrialDetailSheet`("use client") 안에서 `next/dynamic` + `{ ssr: false }` 로 로드.
-    ```tsx
-    const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
-    ```
-  - 다크 글래스 톤: 래퍼에 `data-color-mode="dark"`, 배경은 투명 처리해 유리 표면 위에 얹는다.
-- **대안(더 가볍게/완전 온브랜드): `react-markdown` + shadcn `Textarea` + Write/Preview 탭.**
-  GFM(표·체크박스)용 `remark-gfm` 추가. 스타일을 Tailwind로 직접 잡아 글래스와 완전 일치.
+- **채택: `@mdxeditor/editor`** — `pnpm add @mdxeditor/editor`.
+  - ⚠ 클라이언트 전용(`window` 참조) → Next App Router **공식 패턴**: 플러그인·CSS를 담은
+    `InitializedMDXEditor` 를 만들고 `NotesEditor` 에서 `next/dynamic { ssr:false }` 로 로드.
+  - CSS: `import "@mdxeditor/editor/style.css";` (초기화 컴포넌트에서).
+  - 다크: `<MDXEditor className="dark-theme" … />`.
+  - 최소 플러그인: `headingsPlugin, listsPlugin, quotePlugin, thematicBreakPlugin,
+    linkPlugin, markdownShortcutPlugin`. (마지막이 인플레이스 변환의 핵심)
 
 ## 3. 데이터 모델 (스키마 연계)
 메모는 스키마상 **`CallQueueNotes`** 에 대응한다(../n8n-workflows/docs/schema/public/callqueues.md):

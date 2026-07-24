@@ -205,13 +205,15 @@ Base UI `Button` 을 앵커로 렌더하므로 `render={<a … />}` + `nativeBut
 </Button>
 ```
 
-### 4.7 PTC 콜 메모 (Markdown)
-마크다운 작성 → 자동 렌더. 1순위 `@uiw/react-md-editor`(라이브 프리뷰, 클라 전용 →
-`next/dynamic` `{ ssr:false }`), 대안 `react-markdown` + `Textarea` + Write/Preview 탭.
-유리 위 내부 표면이므로 배경 투명 + 얇은 구분선(중첩 유리 지양). 전체 스펙: [ptc-call-notes.md](ptc-call-notes.md).
+### 4.7 PTC 콜 메모 (WYSIWYG Markdown)
+입력 즉시 인플레이스 변환(`# ` → 헤딩). `@mdxeditor/editor` 채택 — 클라 전용이라
+`InitializedMDXEditor`(플러그인+CSS)를 만들고 `NotesEditor` 에서 `next/dynamic {ssr:false}` 로 로드.
+다크는 `className="dark-theme"`. 유리 위 내부 표면 → 얇은 테두리 + 어두운 반투명 배경(중첩 유리 지양).
+전체 스펙: [ptc-call-notes.md](ptc-call-notes.md).
 ```tsx
-const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
-// <div data-color-mode="dark"><MDEditor value={content} onChange={setContent} /></div>
+const Editor = dynamic(() => import("./InitializedMDXEditor"), { ssr: false });
+// <Editor markdown={initial} onChange={save} className="dark-theme" />
+// InitializedMDXEditor: plugins=[headings, lists, quote, thematicBreak, link, markdownShortcut]
 ```
 
 ### 4.8 상태(Loading / Empty / Error)
