@@ -97,7 +97,7 @@ export function TrialDetailSheet({ trialId, open, onOpenChange }: Props) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
-        className="glass-strong bg-glass-strong! gap-0"
+        className="glass-strong bg-glass-strong! gap-0 overflow-hidden rounded-l-2xl border-l border-glass-edge-strong"
         style={{ width, maxWidth: "95vw" }}
       >
         {/* 폭 조절 드래그 핸들 (왼쪽 가장자리) */}

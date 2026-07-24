@@ -26,7 +26,7 @@ export function TrialsTable({ trials, onRowClick }: Props) {
   return (
     <div
       className={cn(
-        "glass overflow-hidden rounded-2xl",
+        "glass overflow-hidden rounded-lg",
         // 가독성용 여백: 셀 좌우/상하 + 헤더 높이 + 바깥쪽 거터
         "[&_th]:h-13 [&_th]:px-5 [&_td]:px-5 [&_td]:py-4",
         "[&_th:first-child]:pl-6 [&_td:first-child]:pl-6",

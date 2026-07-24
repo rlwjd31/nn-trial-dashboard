@@ -29,7 +29,7 @@ export function StatCards({ stats, loading }: Props) {
       {TILES.map((tile) => (
         <div
           key={tile.key}
-          className="glass flex flex-col gap-1 rounded-2xl px-4 py-4"
+          className="glass flex flex-col gap-1 rounded-lg px-4 py-4"
         >
           <p className="text-xs font-medium text-muted-foreground">
             {tile.label}
