@@ -1,4 +1,5 @@
 @AGENTS.md
+@docs/design.md
 
 # Product Spec
 
@@ -8,7 +9,7 @@
 핵심 요약:
 - **목적**: Sales팀 3명용 내부 "오늘의 Trial" 대시보드 (MVP).
 - **벤치마킹**: https://naonow-bi.vercel.app/sales_today_trials — **기능/정보구조 참조용**일 뿐. 디자인은 베끼지 않으며, PRD에 명시된 최소 기능만 구현한다.
-- **디자인**: Modern + Glassmorphism (반투명 유리 질감 — backdrop-blur, 반투명 표면/border, 소프트 섀도우, gradient 배경). 단, 내부 도구이므로 가독성·정보 밀도를 우선한다. 상세는 PRD §6.0.
+- **디자인**: Modern + Glassmorphism (다크 기본). 토큰·규칙·컴포넌트 레시피는 [docs/design.md](docs/design.md) 가 단일 진실 공급원 — UI/스타일 작업 전 반드시 준수한다. (개요는 PRD §6.0.)
 - **아키텍처**: 브라우저 → Next.js Route Handler(토큰·n8n URL 은닉) → n8n Webhook(고정 IP) → GCP Cloud SQL. 프론트는 DB에 직접 붙지 않는다.
 - **인증**: 서버 전용 환경변수 `N8N_BASE_URL`, `N8N_API_TOKEN` (절대 `NEXT_PUBLIC_` 금지). n8n 호출 시 `x-api-key` 헤더 부착.
 - **프록시 엔드포인트**: `/api/trials`(GET, no-store) · `/api/trials/[id]`(GET) · `/api/trials/precheck`(PATCH).
