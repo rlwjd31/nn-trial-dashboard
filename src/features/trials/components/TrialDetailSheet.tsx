@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { ExternalLinkIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -69,9 +70,41 @@ export function TrialDetailSheet({ trialId, open, onOpenChange }: Props) {
     open ? trialId : null,
   );
 
+  // 시트 폭을 왼쪽 가장자리 핸들로 드래그해 조절.
+  const [width, setWidth] = useState(640);
+  const draggingRef = useRef(false);
+
+  function handleResizeStart(e: React.PointerEvent) {
+    e.preventDefault();
+    draggingRef.current = true;
+    document.body.style.userSelect = "none";
+    const onMove = (ev: PointerEvent) => {
+      if (!draggingRef.current) return;
+      const next = window.innerWidth - ev.clientX; // 오른쪽 시트 → 왼쪽으로 끌면 넓어짐
+      setWidth(Math.min(Math.max(next, 380), window.innerWidth * 0.95));
+    };
+    const onUp = () => {
+      draggingRef.current = false;
+      document.body.style.userSelect = "";
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  }
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="glass-strong bg-glass-strong! w-full gap-0 sm:max-w-md">
+      <SheetContent
+        className="glass-strong bg-glass-strong! gap-0"
+        style={{ width, maxWidth: "95vw" }}
+      >
+        {/* 폭 조절 드래그 핸들 (왼쪽 가장자리) */}
+        <div
+          onPointerDown={handleResizeStart}
+          className="absolute inset-y-0 left-0 z-50 w-1.5 cursor-col-resize transition-colors hover:bg-white/25"
+          aria-hidden
+        />
         <SheetHeader>
           <SheetTitle>Trial 상세</SheetTitle>
           <SheetDescription>
