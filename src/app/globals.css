@@ -46,6 +46,14 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Glassmorphism surfaces — see docs/design.md §3.2 */
+  --color-glass: var(--glass);
+  --color-glass-strong: var(--glass-strong);
+  --color-glass-edge: var(--glass-edge);
+  --color-glass-edge-strong: var(--glass-edge-strong);
+  --shadow-glass: var(--glass-shadow);
+  --blur-glass: var(--glass-blur);
 }
 
 :root {
@@ -81,6 +89,14 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Glass (light — MVP 비목표, 대비용 최소값) */
+  --glass: oklch(1 0 0 / 55%);
+  --glass-strong: oklch(1 0 0 / 72%);
+  --glass-edge: oklch(0.145 0 0 / 8%);
+  --glass-edge-strong: oklch(0.145 0 0 / 12%);
+  --glass-blur: 16px;
+  --glass-shadow: 0 8px 32px oklch(0.145 0 0 / 12%), inset 0 1px 0 0 oklch(1 0 0 / 60%);
 }
 
 .dark {
@@ -115,6 +131,14 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Glass (dark — 기본 테마, PRD §6.0) : 어두운 배경 위 반투명 흰 필름 */
+  --glass: oklch(1 0 0 / 6%);
+  --glass-strong: oklch(1 0 0 / 10%);
+  --glass-edge: oklch(1 0 0 / 12%);
+  --glass-edge-strong: oklch(1 0 0 / 18%);
+  --glass-blur: 16px;
+  --glass-shadow: 0 8px 32px oklch(0 0 0 / 37%), inset 0 1px 0 0 oklch(1 0 0 / 8%);
 }
 
 @layer base {
@@ -123,8 +147,25 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Glass는 뒤에 색이 있어야 보인다 → 은은한 저채도 blob (docs/design.md §3.2) */
+    background-image:
+      radial-gradient(60% 50% at 20% 0%,   oklch(0.488 0.243 264 / 18%) 0%, transparent 60%),
+      radial-gradient(50% 40% at 100% 20%,  oklch(0.6 0.16 20 / 14%)    0%, transparent 55%),
+      radial-gradient(70% 60% at 50% 100%,  oklch(0.7 0.15 160 / 10%)   0%, transparent 60%);
+    background-attachment: fixed;
   }
   html {
     @apply font-sans;
+  }
+}
+
+@layer components {
+  /* 유리 표면 재사용 클래스 — 컴포넌트에서 유틸 나열 대신 이걸 쓴다.
+     glass: 기본 표면(카드·표 컨테이너) / glass-strong: 상위 표면(Sheet·팝오버 등 가독성 필요) */
+  .glass {
+    @apply bg-glass backdrop-blur-glass border border-glass-edge shadow-glass;
+  }
+  .glass-strong {
+    @apply bg-glass-strong backdrop-blur-glass border border-glass-edge-strong shadow-glass;
   }
 }
