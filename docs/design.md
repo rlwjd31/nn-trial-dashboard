@@ -205,7 +205,16 @@ Base UI `Button` 을 앵커로 렌더하므로 `render={<a … />}` + `nativeBut
 </Button>
 ```
 
-### 4.6 상태(Loading / Empty / Error)
+### 4.7 PTC 콜 메모 (Markdown)
+마크다운 작성 → 자동 렌더. 1순위 `@uiw/react-md-editor`(라이브 프리뷰, 클라 전용 →
+`next/dynamic` `{ ssr:false }`), 대안 `react-markdown` + `Textarea` + Write/Preview 탭.
+유리 위 내부 표면이므로 배경 투명 + 얇은 구분선(중첩 유리 지양). 전체 스펙: [ptc-call-notes.md](ptc-call-notes.md).
+```tsx
+const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
+// <div data-color-mode="dark"><MDEditor value={content} onChange={setContent} /></div>
+```
+
+### 4.8 상태(Loading / Empty / Error)
 - **Loading**: `Skeleton`으로 행 placeholder.
 - **Empty**: "오늘 예정된 trial이 없습니다" + lucide 아이콘 1개, `text-muted-foreground`, 중앙 정렬.
 - **Error/롤백**: `sonner` — `toast.error("체크 저장 실패 — 되돌렸습니다")`.

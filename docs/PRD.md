@@ -115,6 +115,8 @@ GCP Cloud SQL (Postgres)
 - **CloudTalk 클릭 발신 버튼** (`ct+tel:` 딥링크) — `student_phone_number` 로 발신.
   기존 "[Call queue 이동] 버튼" / `call_queue_url` 을 대체한다.
   상세 스펙(번호 E.164 정규화 등): [cloudtalk-call-button.md](cloudtalk-call-button.md).
+- **PTC 콜 메모** — PTC(Pre-Trial Call) 중 고객 메모를 **마크다운으로 작성 → 자동 렌더**.
+  저장은 `CallQueueNotes(type='sales')`. 상세 스펙·라이브러리 선택: [ptc-call-notes.md](ptc-call-notes.md).
 
 ## 7. n8n API 스펙 (필수)
 공통: 요청 헤더 `x-api-key: <token>` 필수. 불일치 시 401.
