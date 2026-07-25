@@ -73,15 +73,15 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ApiError" }
 
-  /trials/pre-trial-call:
+  /trials/pre-trial-call-check:
     patch:
       tags: [trials]
       operationId: savePreTrialCall
       summary: pre-trial call 진행 저장
       description: >
         pre-trial call(1·2·3차) 단건 진행 여부 저장. 프론트는 optimistic update 후 이 요청을 보낸다.
-        프록시 대상 n8n `PATCH /webhook/trials/pre-trial-call`. 저장처는
-        `automation.trial_dashboard_state.pre_trial_calls[stage]` (ddl.sql).
+        프록시 대상 n8n `PATCH /webhook/trials/pre-trial-call-check`. 저장처는
+        `automation.trial_dashboard_state.pre_trial_call_checks[stage]` (ddl.sql).
       requestBody:
         required: true
         content:
@@ -154,7 +154,7 @@ components:
         - mentor_tier
         - sales_rep_name
         - status
-        - pre_trial_calls
+        - pre_trial_call_checks
         - converted
       properties:
         trial_id: { type: string, example: "48213" }
@@ -176,7 +176,7 @@ components:
           type: string
           description: Lessons.status. 관측값 approved | scheduled | canceled(철자 검증 필요).
           example: "scheduled"
-        pre_trial_calls:
+        pre_trial_call_checks:
           type: array
           items: { type: boolean }
           minItems: 3

@@ -7,13 +7,13 @@
 CREATE TABLE IF NOT EXISTS automation.trial_dashboard_state (
     lesson_id        INTEGER PRIMARY KEY
                      REFERENCES public."Lessons"(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    pre_trial_calls  BOOLEAN[] NOT NULL DEFAULT ARRAY[false, false, false],  -- [1차,2차,3차] pre-trial call 진행
+    pre_trial_call_checks  BOOLEAN[] NOT NULL DEFAULT ARRAY[false, false, false],  -- [1차,2차,3차] pre-trial call 진행
     sales_note       TEXT,                                                   -- 학생 관련 추가정보 / 세일즈 메모
     updated_by       INTEGER REFERENCES public."Users"(id),
     updated_at       TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- lesson_id = Lessons.id(= trial_id). trial 1건당 1행.
--- pre_trial_calls: 길이 3 boolean 배열. index 1..3 = n차 pre-trial call 완료 여부(Postgres 배열은 1-base).
---   단건 갱신: UPDATE ... SET pre_trial_calls[<stage>] = <bool>.
+-- pre_trial_call_checks: 길이 3 boolean 배열. index 1..3 = n차 pre-trial call 완료 여부(Postgres 배열은 1-base).
+--   단건 갱신: UPDATE ... SET pre_trial_call_checks[<stage>] = <bool>.
 -- 롤백: DROP TABLE automation.trial_dashboard_state;

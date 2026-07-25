@@ -29,7 +29,7 @@ const detailWebhook = trigger({
 });
 const precheckWebhook = trigger({
   type: 'n8n-nodes-base.webhook', version: 2.1,
-  config: { name: 'Pre-trial Call Webhook', parameters: { httpMethod: 'PATCH', path: 'trials/pre-trial-call', responseMode: 'responseNode', options: {} } }
+  config: { name: 'Pre-trial Call Check Webhook', parameters: { httpMethod: 'PATCH', path: 'trials/pre-trial-call-check', responseMode: 'responseNode', options: {} } }
 });
 const noteWebhook = trigger({
   type: 'n8n-nodes-base.webhook', version: 2.1,
@@ -50,7 +50,7 @@ const todayQuery = node({
   m.tier::text AS mentor_tier,
   COALESCE(split_part(rep.email, '@', 1), '') AS sales_rep_name,
   l.status::text AS status,
-  COALESCE(d.pre_trial_calls, ARRAY[false,false,false]::boolean[]) AS pre_trial_calls,
+  COALESCE(d.pre_trial_call_checks, ARRAY[false,false,false]::boolean[]) AS pre_trial_call_checks,
   (cq.lifecycle = 'converted' OR cq."purchasedAt" IS NOT NULL) AS converted
 FROM public."Lessons" l
 JOIN public."Students" s ON s.id = l."studentId"
@@ -116,26 +116,26 @@ const detailNotFound = node({
   config: { name: 'Respond 404', parameters: { respondWith: 'json', responseBody: expr('{{ { "error": "Trial not found" } }}'), options: { responseCode: 404 } } }
 });
 
-// Route 3: PATCH /trials/pre-trial-call  (단일 stage(1..3) 의 진행 여부를 배열 요소로 upsert)
+// Route 3: PATCH /trials/pre-trial-call-check  (단일 stage(1..3) 의 진행 여부를 배열 요소로 upsert)
 const precheckQuery = node({
   type: 'n8n-nodes-base.postgres', version: 2.6,
-  config: { name: 'Upsert Pre-trial Call', credentials: PG,
+  config: { name: 'Upsert Pre-trial Call Check', credentials: PG,
     parameters: { resource: 'database', operation: 'executeQuery',
       options: { queryReplacement: expr('{{ [$json.body.trial_id, $json.body.stage, $json.body.checked] }}') },
-      query: `INSERT INTO automation.trial_dashboard_state AS d (lesson_id, pre_trial_calls)
+      query: `INSERT INTO automation.trial_dashboard_state AS d (lesson_id, pre_trial_call_checks)
 VALUES ($1::int, ARRAY[
   ($2::int = 1 AND $3::boolean),
   ($2::int = 2 AND $3::boolean),
   ($2::int = 3 AND $3::boolean)
 ]::boolean[])
 ON CONFLICT (lesson_id) DO UPDATE SET
-  pre_trial_calls[$2::int] = $3::boolean,
+  pre_trial_call_checks[$2::int] = $3::boolean,
   updated_at = now()` }
   }
 });
 const precheckRespond = node({
   type: 'n8n-nodes-base.respondToWebhook', version: 1.5,
-  config: { name: 'Respond Pre-trial Call', parameters: { respondWith: 'json', responseBody: expr('{{ { "ok": true, "trial_id": $(\'Pre-trial Call Webhook\').item.json.body.trial_id, "stage": $(\'Pre-trial Call Webhook\').item.json.body.stage, "checked": $(\'Pre-trial Call Webhook\').item.json.body.checked } }}'), options: { responseHeaders: { entries: [{ name: 'Cache-Control', value: 'no-store' }] } } } }
+  config: { name: 'Respond Pre-trial Call Check', parameters: { respondWith: 'json', responseBody: expr('{{ { "ok": true, "trial_id": $(\'Pre-trial Call Check Webhook\').item.json.body.trial_id, "stage": $(\'Pre-trial Call Check Webhook\').item.json.body.stage, "checked": $(\'Pre-trial Call Check Webhook\').item.json.body.checked } }}'), options: { responseHeaders: { entries: [{ name: 'Cache-Control', value: 'no-store' }] } } } }
 });
 
 // Route 4: PATCH /trials/note
