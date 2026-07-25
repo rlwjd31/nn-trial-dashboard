@@ -13,9 +13,21 @@ function requireEnv(name: string): string {
 }
 
 /**
+ * n8n 웹훅 경로 빌더.
+ *
+ * n8n Webhook 노드는 경로에 동적 값(`:trial_id`)이 있으면 **노드별 `webhookId`(UUID)를 경로 앞에
+ * 강제로 붙인다.** 반대로 동적 값이 없는 경로는 UUID 없이 그대로 서빙된다 → 목록만 예외다.
+ * (계약: ../backend/docs/contract/api-contract.md — 배경: ../docs/learning/007-platform-owns-the-url.md)
+ */
+export const n8nPaths = {
+  /** GET 목록 — 동적 값이 없어 webhookId 가 붙지 않는다 */
+  trials: () => "/webhook/trials",
+};
+
+/**
  * n8n Webhook 으로 프록시 요청을 보낸다.
  * - x-api-key 헤더는 N8N_API_TOKEN 이 있을 때만 부착
- * - path 는 "/webhook/..." 형태의 n8n 경로
+ * - path 는 "/webhook/..." 형태의 n8n 경로 (`n8nPaths` 로 만든다)
  */
 export async function callN8n(
   path: string,

@@ -1,9 +1,19 @@
-// PRD 섹션 7 n8n API 계약 기준 타입 정의.
-// 섹션 9(데이터 계약)가 미확정이므로, DB 스키마 확정 후 조정될 수 있음.
+// 계약(../backend/docs/contract/openapi.yaml) 기준 타입 정의.
+// enum 값은 2026-07-25 라이브 DB distinct 실측으로 확정됐다 — 임의로 넓히지 말 것.
 
-export type MentorTier = "elite" | "basic";
+/** Mentors.tier — 라이브 distinct 값. (이전 스펙의 `basic` 은 존재하지 않는 값이었다) */
+export type MentorTier = "elite" | "normal";
 
-/** GET /webhook/trials/today 의 trials[] 원소 (= /api/trials) */
+/** Mentors.gender */
+export type MentorGender = "female" | "male" | "nonbinary";
+
+/**
+ * Lessons.status 중 isTrial=TRUE 인 행의 distinct 값.
+ * `LessonStatusType` enum 전체에는 scheduled/in_progress 도 있지만 trial 행에서는 관측되지 않는다.
+ */
+export type TrialStatus = "approved" | "canceled" | "completed" | "paid";
+
+/** GET /webhook/trials 의 trials[] 원소 (= /api/trials) */
 export interface TrialListItem {
   trial_id: string;
   /** ISO8601, KST 오프셋 포함. 예: "2026-07-24T14:00:00+09:00" */
@@ -17,12 +27,11 @@ export interface TrialListItem {
   mentor_tier: MentorTier;
   /** 이 trial을 담당하는 Sales rep 이름 (CallQueues.claimedByAdminId/autoAssignedToId → Users(admin)) */
   sales_rep_name: string;
-  status: string;
+  status: TrialStatus;
   precheck_1: boolean;
   precheck_2: boolean;
   precheck_3: boolean;
-  pre_call_done: boolean;
-  post_call_done: boolean;
+  /** CallQueues.lifecycle='converted' OR purchasedAt IS NOT NULL */
   converted: boolean;
 }
 

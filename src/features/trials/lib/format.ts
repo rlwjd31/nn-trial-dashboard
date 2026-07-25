@@ -20,7 +20,10 @@ const CHIP_BASE = "border backdrop-blur-sm";
 /** 도메인 무관 중립 글래스 칩 (interests 등) */
 export const CHIP_NEUTRAL = `${CHIP_BASE} bg-white/10 text-white/85 border-white/20`;
 
-/** Lessons.status → 표시 라벨 + 글래스 칩 className */
+/**
+ * Lessons.status → 표시 라벨 + 글래스 칩 className.
+ * 값은 approved|canceled|completed|paid (계약 TrialStatus). 알 수 없는 값은 원문 그대로 보여준다.
+ */
 export function statusMeta(status: string): {
   label: string;
   className: string;
@@ -28,13 +31,18 @@ export function statusMeta(status: string): {
   switch (status) {
     case "approved":
       return {
+        label: "Approved",
+        className: `${CHIP_BASE} bg-sky-400/15 text-sky-100 border-sky-300/30`,
+      };
+    case "completed":
+      return {
         label: "Completed",
         className: `${CHIP_BASE} bg-emerald-400/15 text-emerald-100 border-emerald-300/30`,
       };
-    case "scheduled":
+    case "paid":
       return {
-        label: "Scheduled",
-        className: `${CHIP_BASE} bg-sky-400/15 text-sky-100 border-sky-300/30`,
+        label: "Paid",
+        className: `${CHIP_BASE} bg-violet-400/20 text-violet-100 border-violet-300/30`,
       };
     case "canceled":
     case "cancelled":
@@ -47,7 +55,12 @@ export function statusMeta(status: string): {
   }
 }
 
-/** MentorTier → 표시 라벨 + 글래스 칩 className */
+/**
+ * MentorTier → 표시 라벨 + 글래스 칩 className.
+ *
+ * ⚠ DB 값과 화면 라벨은 다르다: 값은 `elite | normal`(라이브 distinct)이지만
+ * 제품 용어는 elite/basic 이므로 **라벨은 "Basic" 을 유지**한다. 값이 바뀐 것이지 UI 용어가 바뀐 게 아니다.
+ */
 export function tierMeta(tier: MentorTier): {
   label: string;
   className: string;
@@ -64,7 +77,7 @@ export function tierMeta(tier: MentorTier): {
       };
 }
 
-/** 취소된 trial 여부 (체크박스 비활성화 판단 등) */
+/** 취소된 trial 여부 (체크박스 비활성화 판단 등). 실데이터 철자는 `canceled`(L 하나). */
 export function isCanceled(trial: Pick<TrialListItem, "status">): boolean {
-  return trial.status === "canceled" || trial.status === "cancelled";
+  return trial.status === "canceled";
 }

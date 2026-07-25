@@ -9,10 +9,6 @@ export interface TrialStats {
   remaining: number;
   /** 취소 건수 */
   canceled: number;
-  /** pre-call 완료 수 */
-  preCallDone: number;
-  /** post-call 완료 수 */
-  postCallDone: number;
   /** 오늘 전환(구매) 수 */
   converted: number;
 }
@@ -27,18 +23,9 @@ export function computeStats(trials: TrialListItem[]): TrialStats {
       acc.total += 1;
       // 체크마크가 하나도 없으면 "아직 손대지 않은" 남은 trial
       if (!t.precheck_1 && !t.precheck_2 && !t.precheck_3) acc.remaining += 1;
-      if (t.pre_call_done) acc.preCallDone += 1;
-      if (t.post_call_done) acc.postCallDone += 1;
       if (t.converted) acc.converted += 1;
       return acc;
     },
-    {
-      total: 0,
-      remaining: 0,
-      canceled: 0,
-      preCallDone: 0,
-      postCallDone: 0,
-      converted: 0,
-    },
+    { total: 0, remaining: 0, canceled: 0, converted: 0 },
   );
 }
