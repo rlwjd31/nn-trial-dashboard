@@ -40,3 +40,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 학습 노트 — 실물은 상위(main 워크트리) `../docs/learning/` 에 있고 git 추적하지 않는다.
+# 이 브랜치에 docs/ 가 되살아나도 추적되지 않도록 규칙만 맞춰 둔다 (전 브랜치 동일).
+docs/learning/
