@@ -115,7 +115,13 @@ mock 응답 모양은 계약과 일치해야 한다(`pnpm test:contract` 가 이
 - `automation.trial_dashboard_state` **생성 완료**(2026-07-26 실행 1181101 로 확인 — 이 테이블을
   LEFT JOIN 하는 목록 쿼리가 에러 없이 실제 행을 반환). 이전의 "존재 X → 4 엔드포인트 전부 500" 은 해소됐다.
   ⚠ FK 는 없다(`ddl.sql` 참고) → 존재하지 않는 `trial_id` 를 DB 가 막지 않으므로 쓰기 쿼리가 직접 막는다.
-- 워크플로우 **미발행**: `active: false`, `activeVersionId: null` → production webhook URL 서빙 안 됨. 인증도 `none`.
+- 워크플로우 **발행됨**(2026-07-26): `active: true`, trigger 4개. production URL 서빙 중.
+  실제 요청으로 확인한 것 — 목록 `GET /webhook/trials` **200**, 상세 `GET /webhook/<hookId>/trials/<id>` **200**,
+  없는 id 는 **404 `{"error":"Trial not found"}`**(IF `loose` 수정이 실제로 동작함), 정렬 DESC.
+  **목록에 webhookId 는 붙지 않는다** — `/webhook/<uuid>/trials` 는 404 `not registered` 로 확정.
+  ⚠ MCP `get_workflow_details` 의 triggerInfo 는 **항상** `<webhookId>/<path>` 로 표시하므로 URL 판별 근거로 쓰지 말 것.
+- ⚠ **인증 `none` 인 채로 발행돼 있다.** 목록 응답에 학생 이름·이메일·휴대폰번호가 들어간다 →
+  URL 만 알면 누구나 조회된다. x-api-key(Header Auth) 부착이 미해결 과제다.
 - **타임존 (2026-07-25 수정 완료·배포됨)**: `Lessons.startAt` 은 `timestamp without time zone` 인데
   **값은 UTC** 다. 확정 근거(추론 아님): 타임존 명시 컬럼과 31,567행 대조 —
   `automation.paid_class_reminder_log.class_start_at` 28,784/28,791 일치,
