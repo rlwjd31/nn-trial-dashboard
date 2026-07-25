@@ -37,7 +37,8 @@ const todayWebhook = trigger({
 });
 const detailWebhook = trigger({
   type: 'n8n-nodes-base.webhook', version: 2.1,
-  config: { name: 'Detail Webhook', parameters: { httpMethod: 'GET', path: 'trials/:trial_id', responseMode: 'responseNode', options: {} } }
+  // path 앞의 슬래시는 배포본 그대로다(나머지 3개는 없다). n8n 이 정규화해 URL 은 동일하다.
+  config: { name: 'Detail Webhook', parameters: { httpMethod: 'GET', path: '/trials/:trial_id', responseMode: 'responseNode', options: {} } }
 });
 const precheckWebhook = trigger({
   type: 'n8n-nodes-base.webhook', version: 2.1,
@@ -95,7 +96,7 @@ LEFT JOIN automation.trial_dashboard_state d ON d.lesson_id = l.id
 WHERE l."isTrial" = TRUE
   AND l."startAt" >= ($1::timestamptz AT TIME ZONE 'UTC')
   AND l."startAt" <  ($2::timestamptz AT TIME ZONE 'UTC')
-ORDER BY l."startAt"` } }
+ORDER BY l."startAt" DESC;` } }
 });
 const todayAggregate = node({
   type: 'n8n-nodes-base.aggregate', version: 1,
