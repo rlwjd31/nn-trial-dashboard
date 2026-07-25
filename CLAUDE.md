@@ -102,8 +102,10 @@ trial-dashboard/            ← main 워크트리. 공용 규칙·문서의 단�
 [docs/learning/](docs/learning/README.md) 에 노트를 추가·갱신한다. **브랜치와 무관하게 적용된다.**
 
 - **위치는 항상 `trial-dashboard/docs/learning/`** (main 워크트리). 공용 문서이므로 사본을 만들지 않는다 —
-  `frontend`/`backend` 세션에서는 `../docs/learning/` 에 직접 쓰고, **그 커밋은 main 워크트리에서** 한다
-  (`git -C .. add docs/learning && git -C .. commit`). 메시지: `[Docs]: add learning note …`.
+  `frontend`/`backend` 세션에서는 `../docs/learning/` 에 직접 쓴다.
+- ⚠ **이 폴더는 git 추적 대상이 아니다**(전 브랜치 `.gitignore`). 사용자의 개인 공부 기록이므로
+  **커밋하지 않는다** — 노트를 추가한 뒤 `git add` 하지 말 것. 작업 커밋에 섞여 들어가지도 않게 주의한다.
+  파일은 로컬 디스크에만 존재하므로 `main` 에서 `git clean -fdx` 를 돌리면 **사라진다**(§금지사항 참조).
 - **형식·판단 기준은 [docs/learning/README.md](docs/learning/README.md) 의 "노트 작성 규칙"** 을 따른다
   (한 줄 정의 → 어떤 상황에서 쓰나 → 코드 요약 → 함정 → 나온 작업). 목록 표에 한 줄 추가까지가 한 세트다.
 - **무엇을 남기나**: 라이브러리·플랫폼의 비자명한 동작, 실패 모드와 그 이유, "이렇게 짜면 조용히 틀리는" 지점,

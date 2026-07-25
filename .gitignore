@@ -51,3 +51,8 @@ next-env.d.ts
 # ⚠ main 에서 `git clean -fdx` 를 실행하면 ignored 인 이 둘이 삭제된다 — 실행 금지.
 /frontend/
 /backend/
+
+# 학습 노트 (docs/learning) — 개인 공부 기록이므로 git 추적하지 않는다.
+# 모든 브랜치의 .gitignore 에 같은 규칙이 들어있다.
+# ⚠ ignored 이므로 `git clean -fdx` 로 **삭제된다**(위 경고 참조). 파일 보존은 로컬 책임.
+/docs/learning/
