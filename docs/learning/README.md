@@ -14,6 +14,10 @@
 | 003 | [Optimistic update · 롤백 · mutation 직렬화](./003-optimistic-update.md) | 서버를 기다리지 않고 화면을 먼저 고치고, 실패하면 되돌린다 |
 | 004 | [중복 쓰기 막기 — dirty 체크의 비교 기준](./004-dirty-check.md) | 무엇과 비교하는지가 핵심. 원본과 비교하면 조용히 새어 나간다 |
 | 005 | [브라우저 전용 외부 저장소와 `useSyncExternalStore`](./005-external-store.md) | effect+setState 대신 구독. 그리고 저장소 주인이 바뀌면 이 훅은 필요 없어진다 |
+| 006 | [식별자를 경로에 둘 것인가 body 에 둘 것인가](./006-identifier-in-path-vs-body.md) | 바꿀 대상은 경로, 바꿀 값은 body. 단 훅의 variables 는 전송 형식과 다르다 |
+| 007 | [플랫폼이 URL 모양을 바꿔버릴 때](./007-platform-owns-the-url.md) | n8n 은 동적 경로에 UUID 를 강제로 붙인다. 조건부 규칙은 조건이 거짓인 쪽도 확인해야 끝난다 |
+| 008 | [크로스 스키마 FK 와 `REFERENCES` 권한](./008-cross-schema-fk-and-references-privilege.md) | SELECT 된다고 FK 를 걸 수 있는 게 아니다. 남의 스키마에 얹을 땐 관례를 실측한다 |
+| 009 | [naive timestamp 에 UTC 가 들어 있을 때](./009-naive-timestamp-holding-utc.md) | `AT TIME ZONE` 의 방향은 우리가 가정한다. 컬럼에 걸면 인덱스까지 죽는다 |
 
 ## 노트 작성 규칙 (에이전트·사람 공통)
 
