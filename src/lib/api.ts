@@ -4,8 +4,8 @@
 import type {
   NoteRequest,
   NoteResponse,
-  PrecheckRequest,
-  PrecheckResponse,
+  PreTrialCallCheckRequest,
+  PreTrialCallCheckResponse,
   TrialDetail,
   TrialsTodayResponse,
 } from "@/types/trial";
@@ -34,15 +34,15 @@ export async function fetchTrialDetail(trialId: string): Promise<TrialDetail> {
   return toJson<TrialDetail>(res);
 }
 
-export async function savePrecheck(
-  input: PrecheckRequest,
-): Promise<PrecheckResponse> {
-  const res = await fetch("/api/trials/precheck", {
+export async function savePreTrialCallCheck(
+  input: PreTrialCallCheckRequest,
+): Promise<PreTrialCallCheckResponse> {
+  const res = await fetch("/api/trials/pre-trial-call-check", {
     method: "PATCH",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(input),
   });
-  return toJson<PrecheckResponse>(res);
+  return toJson<PreTrialCallCheckResponse>(res);
 }
 
 export async function saveNote(input: NoteRequest): Promise<NoteResponse> {

@@ -1,17 +1,19 @@
 import { NextResponse } from "next/server";
 import { callN8n } from "@/lib/n8n";
-import { setMockPrecheck } from "@/features/trials/mock/trials.mock";
-import type { PrecheckRequest } from "@/types/trial";
+import { setMockPreTrialCallCheck } from "@/features/trials/mock/trials.mock";
+import type { PreTrialCallCheckRequest } from "@/types/trial";
 
 export const dynamic = "force-dynamic";
 
 const USE_MOCK = !process.env.N8N_BASE_URL;
 
-// PATCH /api/trials/precheck  ->  n8n PATCH /webhook/trials/precheck
+// PATCH /api/trials/pre-trial-call-check
+//   -> n8n PATCH /webhook/trials/pre-trial-call-check
+// 저장처: automation.trial_dashboard_state.pre_trial_call_checks[stage]
 export async function PATCH(req: Request) {
-  let body: PrecheckRequest;
+  let body: PreTrialCallCheckRequest;
   try {
-    body = (await req.json()) as PrecheckRequest;
+    body = (await req.json()) as PreTrialCallCheckRequest;
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
@@ -25,7 +27,7 @@ export async function PATCH(req: Request) {
   }
 
   if (USE_MOCK) {
-    const ok = setMockPrecheck(trial_id, stage, checked);
+    const ok = setMockPreTrialCallCheck(trial_id, stage, checked);
     if (!ok) {
       return NextResponse.json({ error: "Trial not found" }, { status: 404 });
     }
@@ -36,7 +38,7 @@ export async function PATCH(req: Request) {
   }
 
   try {
-    const res = await callN8n("/webhook/trials/precheck", {
+    const res = await callN8n("/webhook/trials/pre-trial-call-check", {
       method: "PATCH",
       body: JSON.stringify({ trial_id, stage, checked }),
     });
@@ -46,9 +48,9 @@ export async function PATCH(req: Request) {
       headers: { "cache-control": "no-store" },
     });
   } catch (err) {
-    console.error("[/api/trials/precheck] proxy error:", err);
+    console.error("[/api/trials/pre-trial-call-check] proxy error:", err);
     return NextResponse.json(
-      { error: "Failed to save precheck" },
+      { error: "Failed to save pre-trial call check" },
       { status: 502 },
     );
   }
