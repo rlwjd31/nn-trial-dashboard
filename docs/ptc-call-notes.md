@@ -1,8 +1,8 @@
 # 기능 스펙 — PTC 콜 메모 (Markdown Notes)
 
-> 상태: 구현 대기(스펙 확정). 배치: `src/features/trials/components/TrialDetailSheet.tsx`
+> 상태: **구현 완료**(frontend `1624483` — 저장까지 배선됨). 배치: `src/features/trials/components/TrialDetailSheet.tsx`
 > 의 상세 필드 아래(발신/Call queue 버튼 근처). PTC(Pre-Trial Call) 진행 중
-> 해당 고객에 대한 메모를 **마크다운으로 작성 → 자동 렌더**한다.
+> 해당 고객에 대한 메모를 **마크다운으로 작성 → 자동 렌더 → 자동 저장**한다.
 
 ## 1. 목적
 Sales rep이 PTC 콜을 하며 고객 상담 내용을 상세 패널에서 즉시 기록.
@@ -30,45 +30,68 @@ Sales rep이 PTC 콜을 하며 고객 상담 내용을 상세 패널에서 즉�
     linkPlugin, markdownShortcutPlugin`. (마지막이 인플레이스 변환의 핵심)
 
 ## 3. 데이터 모델 (스키마 연계)
-메모는 스키마상 **`CallQueueNotes`** 에 대응한다(../n8n-workflows/docs/schema/public/callqueues.md):
+확정 저장처는 **`automation.trial_dashboard_state.sales_note`** (계약 openapi.yaml §`/trials/note`,
+backend `ddl.sql`). trial 1건당 메모 1개이며, 마크다운 원문을 TEXT 로 그대로 담는다.
 
-| 컬럼 | 매핑 |
-|---|---|
-| `callQueueId` | 해당 학생의 CallQueues.id |
-| `type` | `'sales'` (mentor 메모와 구분) |
-| `content` | **작성한 마크다운 원문(TEXT)** — 렌더는 프론트에서 |
-| `lessonId` | 이 trial의 Lessons.id (연관 수업) |
-| `createdById` | 작성자(로그인 rep) userId |
+> 초기 스펙은 `public."CallQueueNotes"(type='sales')` 를 가정했으나 채택되지 않았다 —
+> `public` 스키마는 읽기 전용이고(공용 CLAUDE.md §도메인 경계), 대시보드 자체 상태는
+> `automation` 스키마에 모으기로 했다. 아래는 폐기된 안이므로 참고만 할 것.
+>
+> | 컬럼 | 매핑 |
+> |---|---|
+> | `callQueueId` | 해당 학생의 CallQueues.id |
+> | `type` | `'sales'` (mentor 메모와 구분) |
+> | `content` | 작성한 마크다운 원문(TEXT) |
+> | `lessonId` | 이 trial의 Lessons.id |
+> | `createdById` | 작성자(로그인 rep) userId |
+>
+> 작성자 기록(`createdById`)·행 누적(히스토리)은 현재 계약에 없다. 로그인 시스템이
+> PRD 비목표이므로 작성자 추적은 함께 보류된 상태다.
 
-> 원문(마크다운 문자열)을 `content` 에 그대로 저장하고, 렌더는 항상 프론트에서 한다
-> (저장은 순수 텍스트 → 안전·이식성).
+원문(마크다운 문자열)을 그대로 저장하고, 렌더는 항상 프론트에서 한다
+(저장은 순수 텍스트 → 안전·이식성).
 
-## 4. 저장(persistence) — MVP 범위 주의
-- 쓰기이므로 n8n 엔드포인트가 필요하다. **데이터 계약 미확정**(PRD §9와 동일 성격).
-- 예상 계약(확정 필요):
-  - `POST/PATCH /api/trials/[id]/notes` → n8n `/webhook/trials/notes`
-    body: `{ trial_id, content }` → `CallQueueNotes(type='sales', ...)` upsert.
-- **MVP 1차 범위**: 작성 칸 + 마크다운 렌더(라이브 프리뷰) + optimistic 저장 훅 골격.
-  실제 저장 배선은 위 계약 확정 후. 확정 전에는 상세 조회 시 `content` 를 표시만 해도 됨.
+## 4. 저장(persistence) — 확정·구현됨
+- 계약: `PATCH /api/trials/note` → n8n `PATCH /webhook/trials/note`,
+  body `{ trial_id, note }` → `sales_note` upsert. 읽기는 상세 응답의 `sales_note`
+  (미기록이면 `null`). **빈 문자열 = 기록 삭제.**
+- 자동 저장: MDXEditor `onChange` 는 스로틀되지 않으므로(키 입력마다 발생) **3초 디바운스**.
+  저장 1회 = n8n 실행 1건이므로 짧게 두지 않는다(700ms 로 시작했다가 상향).
+  디바운스 대기 중 시트를 닫거나 trial 을 바꾸면 마지막 입력이 유실되므로 **언마운트 시 flush** 한다.
+- dirty 체크: 이미 보낸 본문과 같아지면(한 글자 썼다가 지움 등) 저장하지 않는다.
+  비교 기준은 **에디터가 정규화한 초기 본문**(`onChange` 의 `initialMarkdownNormalize=true` 호출값)이다 —
+  DB 원본 문자열로 비교하면 직렬화 차이 때문에 첫 입력 이후 영원히 dirty 로 판정된다.
+  (배경: ../docs/learning/004-dirty-check.md)
+- **남은 구멍**: 새로고침·탭 닫기는 언마운트가 아니므로 flush 가 돌지 않아, 대기 중 3초분이 유실될 수 있다.
+  메우려면 `pagehide` + `fetch(keepalive:true)` 가 필요하다(도입 여부 미결정 — ../docs/learning/001-page-unload-save.md).
+- optimistic update: `useNoteMutation` 이 상세 캐시(`trialKeys.detail`)를 먼저 고치고 실패 시 롤백+토스트.
+  성공해도 재조회하지 않는다(에코 응답 = 방금 보낸 값). 자동 저장이 겹칠 때 옛 본문이 최신 본문을
+  덮지 않도록 mutation `scope` 로 직렬화한다.
+- `markdown` prop 은 **마운트 시점에만 읽힌다** → optimistic 값이 되돌아와도 편집 중 내용이
+  덮이거나 커서가 튀지 않는다. trial 전환은 `TrialDetailSheet` 의 `key` 재마운트로 처리.
 
 ## 5. UI / 배치
 - `TrialDetailSheet` 내부, 상세 필드 아래·버튼 위(또는 별도 섹션)에 "메모" 영역.
 - 다크 글래스 톤(design.md §4). 에디터/프리뷰 컨테이너는 `.glass` 대신 내부 표면이므로
   투명 배경 + 얇은 구분선 정도로 가볍게(과한 중첩 유리 지양).
-- 높이는 적당히(예: 200px), 세로 리사이즈 허용.
+- 높이는 `contentEditableClassName="min-h-[220px]"`. 별도 세로 리사이즈 핸들은 없다
+  (시트 자체가 좌측 핸들로 가로 리사이즈된다).
+- 마크다운 요소 타이포는 `globals.css` 의 `.ptc-notes` 블록이 복원한다(에디터 리셋 상쇄).
 
 ## 6. 보안
-- 마크다운 렌더 시 **XSS 주의**. `react-markdown` 은 기본적으로 raw HTML 비활성(안전).
-  `@uiw/react-md-editor` 프리뷰는 `rehype-sanitize` 를 적용한다.
-- 내부 도구라도 학생 개인정보가 담기므로 원문은 서버(n8n/DB) 경유로만 저장.
+- 마크다운 렌더 시 **XSS 주의** → 현재 상태·남은 확인 사항은 §8 마지막 항목.
+- 내부 도구라도 학생 개인정보가 담기므로 원문은 서버(n8n/DB) 경유로만 저장한다.
+  브라우저 localStorage 임시 저장은 제거됐다(§4).
 
 ## 7. 비목표
 - 실시간 협업 편집, 멘션, 첨부파일/이미지 업로드 → 제외.
-- 메모 버전 관리/히스토리 → 제외(단, `CallQueueNotes` 는 행 누적 가능 — 추후).
+- 메모 버전 관리/히스토리 → 제외. 현재 계약은 trial 1건당 `sales_note` 1개 upsert다.
 - WYSIWYG 리치 에디터 → 제외(마크다운 텍스트로 충분).
 
 ## 8. 완료 기준
-- [ ] 상세 패널에 마크다운 메모 작성 칸이 있다.
-- [ ] 마크다운 문법 입력 시 렌더(미리보기)가 된다(목록·굵게·체크박스 등 GFM).
-- [ ] (배선 시) 작성 내용이 `content`(마크다운 원문)로 저장/조회된다.
-- [ ] 렌더가 XSS에 안전하다(raw HTML 비활성 또는 sanitize).
+- [x] 상세 패널에 마크다운 메모 작성 칸이 있다.
+- [x] 마크다운 문법 입력 시 렌더(미리보기)가 된다 — `e2e/notes.spec.ts` 가 H1·목록 렌더를 단언.
+- [x] 작성 내용이 마크다운 원문으로 저장/조회된다 — `sales_note`, 새로고침 후 유지까지 e2e 커버.
+- [ ] 렌더가 XSS에 안전하다 — **미검증.** MDXEditor 는 `suppressHtmlProcessing` 를 켜지 않으면
+      raw HTML 을 처리한다(현재 미설정). 내부 도구 + rep 본인이 작성한 내용만 들어오므로
+      실질 위험은 낮지만, 확인 후 필요하면 해당 prop 을 켤 것.
