@@ -4,8 +4,15 @@ import "server-only";
 // N8N_BASE_URL / N8N_API_TOKEN 은 NEXT_PUBLIC_ 접두어 없이 서버에서만 접근.
 // 브라우저 번들에 절대 포함되지 않도록 "server-only" 로 가드한다.
 
+/**
+ * env 값을 읽고 **trim** 한다.
+ * 대시보드 UI(textarea)에 값을 붙여넣으면 줄바꿈·공백이 섞여 들어오기 쉽고,
+ * 그 상태로 URL 을 만들면 `fetch` 가 `Invalid URL` 로 즉시 throw 한다.
+ * (이 접두어 없는 이름들은 서버에서만 읽힌다 — NEXT_PUBLIC_ 을 붙이면 브라우저 번들에
+ *  인라인되어 토큰이 공개된다. Next 문서 §Bundling Environment Variables for the Browser)
+ */
 function requireEnv(name: string): string {
-  const value = process.env[name];
+  const value = process.env[name]?.trim();
   if (!value) {
     throw new Error(`Missing required env var: ${name}`);
   }
@@ -49,7 +56,7 @@ export async function callN8n(
   const baseUrl = requireEnv("N8N_BASE_URL").replace(/\/+$/, "");
   // Webhook 노드에 인증을 걸지 않은 상태에서도 호출돼야 하므로 토큰은 선택 사항이다.
   // 값이 있으면 x-api-key 로 붙인다(n8n 쪽에 Header Auth 를 켜면 필수가 된다).
-  const token = process.env.N8N_API_TOKEN;
+  const token = process.env.N8N_API_TOKEN?.trim();
   const url = `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
 
   return fetch(url, {
