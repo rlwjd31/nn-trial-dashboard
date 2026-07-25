@@ -78,10 +78,9 @@ export interface PreTrialCallCheckResponse {
   checked: boolean;
 }
 
-/** PATCH /webhook/trials/note body (= /api/trials/note) */
+/** PATCH /api/trials/{id}/note 의 요청 body (trial_id 는 경로) */
 export interface NoteRequest {
-  trial_id: string;
-  /** 마크다운 원문. 빈 문자열이면 기록 삭제로 취급된다(계약 §NoteRequest) */
+  /** 마크다운 원문. 빈 문자열이면 기록 삭제로 취급된다 */
   note: string;
 }
 

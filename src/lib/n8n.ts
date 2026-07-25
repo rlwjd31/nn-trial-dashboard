@@ -31,6 +31,10 @@ export const n8nPaths = {
   /** PATCH pre-trial call check */
   preTrialCallCheck: (trialId: string) =>
     `/webhook/${requireEnv("N8N_WEBHOOK_ID_PRE_TRIAL_CALL_CHECK")}/trials/${encodeURIComponent(trialId)}/pre-trial-call-check`,
+
+  /** PATCH 세일즈 메모 */
+  note: (trialId: string) =>
+    `/webhook/${requireEnv("N8N_WEBHOOK_ID_NOTE")}/trials/${encodeURIComponent(trialId)}/note`,
 };
 
 /**

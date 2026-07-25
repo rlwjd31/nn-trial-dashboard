@@ -50,8 +50,11 @@ export async function savePreTrialCallCheck(
   return toJson<PreTrialCallCheckResponse>(res);
 }
 
-export async function saveNote(input: NoteRequest): Promise<NoteResponse> {
-  const res = await fetch("/api/trials/note", {
+export async function saveNote(
+  trialId: string,
+  input: NoteRequest,
+): Promise<NoteResponse> {
+  const res = await fetch(`/api/trials/${encodeURIComponent(trialId)}/note`, {
     method: "PATCH",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(input),
