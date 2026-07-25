@@ -1,9 +1,12 @@
-# CLAUDE.md
+# CLAUDE.md — frontend 도메인
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+이 파일은 `frontend` 워크트리(= `trial-dashboard/frontend/`) **전용** 규칙이다.
 
-@AGENTS.md
-@docs/design.md
+> **공용 규칙은 상위 `../CLAUDE.md`(main 워크트리)가 갖고 있고, 이 폴더에서 세션을 열면 자동으로 함께 로드된다.**
+> 저장소 구조 · 브랜치 경계 · 계약 변경 알림 프로토콜 · Product Spec · 커밋 규약은 전부 거기 있다 —
+> **여기에 복사하지 말 것** (사본이 둘이 되면 어느 쪽이 진짜인지 알 수 없게 된다).
+> `AGENTS.md` · `docs/**` 도 상위에만 있다 → `../AGENTS.md` · `../docs/**`.
+> 아래 본문의 `docs/…` 표기는 모두 그 상위 사본을 가리킨다.
 
 # Commands
 
@@ -39,7 +42,7 @@ components ─→ hooks (TanStack Query) ─→ @/lib/api ─→ src/app/api/**/
 
 - 역방향 import 금지. 브라우저 코드는 **자기 도메인 `/api/*` 만** 호출하고 n8n URL·토큰을 모른다.
 - `@/lib/n8n` 은 `import "server-only"` 가드 + `requireEnv()` 로 env 누락 시 즉시 throw.
-- 폴더 배치 규칙·결정 트리는 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (feature-lite: 도메인은 `features/trials` 하나뿐).
+- 폴더 배치 규칙·결정 트리는 [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md) (feature-lite: 도메인은 `features/trials` 하나뿐).
 - 쿼리 키는 `features/trials/hooks/queryKeys.ts` 의 `trialKeys` 만 사용 (문자열 배열 직접 작성 금지).
 - 상단 KPI 카드는 별도 API가 없다 — 목록 응답을 `features/trials/lib/aggregate.ts::computeStats` 로 프론트 집계.
 
@@ -52,7 +55,7 @@ components ─→ hooks (TanStack Query) ─→ @/lib/api ─→ src/app/api/**/
   → 요청 간·테스트 간 상태가 공유되므로 E2E는 `workers: 1` 직렬 실행 + 테스트 말미 원복이 필수다.
   완전 초기화는 dev 서버 재시작뿐.
 - E2E 기대값은 mock 시드에 고정돼 있다(active 11 / Remaining 3 / Converted 2 등).
-  **시드를 바꾸면 `e2e/*.spec.ts` 기대값도 함께 갱신**한다. 규칙·알려진 함정은 [docs/testing.md](docs/testing.md).
+  **시드를 바꾸면 `e2e/*.spec.ts` 기대값도 함께 갱신**한다. 규칙·알려진 함정은 [docs/testing.md](../docs/testing.md).
 - mock 파일 헤더에 각 필드 → 실제 DB 컬럼 매핑이 주석으로 있다. 필드 의미를 확인할 때 여기를 먼저 본다.
 
 ## Next 16 / 스택 주의점
@@ -67,7 +70,7 @@ components ─→ hooks (TanStack Query) ─→ @/lib/api ─→ src/app/api/**/
 ## 미수렴 상태 (작업 전 반드시 인지)
 
 `src/**` 가 아직 계약(openapi.yaml)에 수렴하지 않았다. 관련 파일을 만질 때 함께 정리한다 —
-해야 할 목록은 [docs/contract/api-contract.md](docs/contract/api-contract.md) "프론트 변경 체크리스트".
+해야 할 목록은 [docs/contract/api-contract.md](../docs/contract/api-contract.md) "프론트 변경 체크리스트".
 
 | 항목 | 현재 `src/**` | 계약(openapi) |
 |---|---|---|
@@ -83,7 +86,7 @@ type → `lib/api.ts` → route handler → hooks → components → mock → e2
 
 **테스트 레이어는 Playwright E2E 하나뿐이다** — 단위 테스트 러너(Vitest 등)는 미도입.
 `computeStats`·`toE164` 같은 순수 함수도 현재는 E2E로 간접 검증된다. 러너를 새로 들이지 말고,
-기능/수정 시 `e2e/` 에 시나리오를 추가한다. 전체 규칙·함정 표는 [docs/testing.md](docs/testing.md).
+기능/수정 시 `e2e/` 에 시나리오를 추가한다. 전체 규칙·함정 표는 [docs/testing.md](../docs/testing.md).
 
 | spec | 커버 범위 |
 |---|---|
@@ -100,70 +103,3 @@ type → `lib/api.ts` → route handler → hooks → components → mock → e2
   체크박스는 `aria-checked` 기반이라 `toBeChecked()` 로 단언한다.
 - 실패 시: `test-results/**/error-context.md`(ARIA 스냅샷) → `trace.zip` 순으로 본다.
 - `test-results/`·`playwright-report/` 는 커밋 금지(gitignore).
-
-# Product Spec
-
-이 프로젝트의 제품 요구사항은 [docs/PRD.md](docs/PRD.md) 에 정의되어 있다.
-기능 구현·API·화면 작업 전 반드시 해당 문서를 참조한다.
-
-핵심 요약:
-- **목적**: Sales팀 3명용 내부 "오늘의 Trial" 대시보드 (MVP).
-- **벤치마킹**: https://naonow-bi.vercel.app/sales_today_trials — **기능/정보구조 참조용**일 뿐. 디자인은 베끼지 않으며, PRD에 명시된 최소 기능만 구현한다.
-- **디자인**: Modern + Glassmorphism (다크 기본). 토큰·규칙·컴포넌트 레시피는 [docs/design.md](docs/design.md) 가 단일 진실 공급원 — UI/스타일 작업 전 반드시 준수한다. (개요는 PRD §6.0.)
-- **아키텍처**: 브라우저 → Next.js Route Handler(토큰·n8n URL 은닉) → n8n Webhook(고정 IP) → GCP Cloud SQL. 프론트는 DB에 직접 붙지 않는다.
-- **인증**: 서버 전용 환경변수 `N8N_BASE_URL`, `N8N_API_TOKEN` (절대 `NEXT_PUBLIC_` 금지). n8n 호출 시 `x-api-key` 헤더 부착.
-- **프록시 엔드포인트**: `/api/trials`(GET, no-store) · `/api/trials/[id]`(GET) · `/api/trials/precheck`(PATCH).
-- **최신성**: TanStack Query `staleTime` 60s + `refetchOnWindowFocus`. 체크박스는 optimistic update(실패 시 롤백).
-- **명시적 비목표**: 로그인 시스템, 실시간 동기화(웹소켓/폴링), 페이지네이션, 정렬/필터/검색 UI, 모바일 최적화 → 구현하지 않는다 (over-engineering 방지).
-- **데이터 계약**: 실제 DB 스키마는 미확정. PRD §9 항목은 구현 전 확인이 필요하다.
-
-# Domains & Contract (front / back 공유)
-
-이 저장소는 두 도메인으로 나뉜다. 작업 전 자기 도메인 가이드를 읽고, 경계는 계약을 따른다.
-
-- **공유 계약(boundary)**: [docs/contract/openapi.yaml](docs/contract/openapi.yaml) = API 모양의 단일 진실 공급원(SoT).
-  변경 프로토콜·프론트 핸드오프: [docs/contract/api-contract.md](docs/contract/api-contract.md).
-  응답/요청 모양을 바꿀 땐 **openapi 를 먼저** 고치고 front·back 이 각자 수렴한다.
-- **프론트 도메인**: UI(`src/features`, `src/components`) + 프록시(`src/app/api`).
-  가이드 = [docs/design.md](docs/design.md)(디자인·설계) + [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)(폴더 구조).
-- **백엔드 도메인**: n8n 워크플로우 + DB(별도 repo `../n8n-workflows`). 가이드 = [docs/backend/guide.md](docs/backend/guide.md).
-  배포 SoT = n8n 클라우드 워크플로우. **DDL·DB 변경은 DB 소유자**가 한다(`public` 스키마는 읽기 전용).
-- **규칙**: 프론트는 `src/**` 만, 백엔드는 n8n/DB 만 건드린다. **엔드포인트·응답 모양의 최신 정의는 위 계약(openapi)이 우선**한다(아래 Product Spec 요약이 계약과 다르면 계약이 SoT).
-
-# Commit Convention
-
-이 저장소의 모든 commit 메시지는 반드시 아래 형태를 따른다.
-
-```
-[Type]: Description
-```
-
-- `[Type]` — 대괄호로 감싼 변경 유형 (아래 표 중 하나).
-- `: ` — 콜론 + 공백 한 칸.
-- `Description` — 변경 내용을 명령형 현재시제로 간결하게.
-
-## 예시
-
-```
-[Feat]: add trials list route handler
-[Fix]: correct precheck stage validation
-[Docs]: update README data contract section
-```
-
-## Type 목록
-
-| Type | 용도 |
-|---|---|
-| `Feat` | 새 기능 |
-| `Fix` | 버그 수정 |
-| `Docs` | 문서 변경 |
-| `Style` | 포맷/세미콜론 등 동작에 영향 없는 변경 |
-| `Refactor` | 기능 변화 없는 코드 구조 개선 |
-| `Test` | 테스트 추가/수정 |
-| `Chore` | 빌드/설정/의존성 등 그 외 |
-
-## 규칙
-
-- Type 은 위 표의 값만 사용한다.
-- 표기는 위 표 그대로 쓴다 (`[Feat]`, `[Fix]` …).
-- 한 commit 은 하나의 논리적 변경만 담는다.
