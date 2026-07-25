@@ -1,9 +1,12 @@
-# CLAUDE.md
+# CLAUDE.md — backend 도메인
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+이 파일은 `backend` 워크트리(= `trial-dashboard/backend/`) **전용** 규칙이다.
 
-@AGENTS.md
-@docs/design.md
+> **공용 규칙은 상위 `../CLAUDE.md`(main 워크트리)가 갖고 있고, 이 폴더에서 세션을 열면 자동으로 함께 로드된다.**
+> 저장소 구조 · 브랜치 경계 · 계약 변경 알림 프로토콜 · Product Spec · 커밋 규약은 전부 거기 있다 —
+> **여기에 복사하지 말 것** (사본이 둘이 되면 어느 쪽이 진짜인지 알 수 없게 된다).
+> `AGENTS.md` · `docs/**` 도 상위에만 있다 → `../AGENTS.md` · `../docs/**`.
+> 아래 본문의 `docs/…` 표기는 모두 그 상위 사본을 가리킨다.
 
 # 이 디렉토리의 정체 (worktree)
 
@@ -60,7 +63,7 @@ env 를 채우면 자동으로 n8n 프록시로 전환된다 — 코드 수정 �
 
 ## 계층 경계 (의존 방향 한 방향)
 `features/trials/components → hooks → @/lib/api → app/api/**/route.ts → @/lib/n8n → n8n`.
-역방향 import 금지. 폴더 배치 결정은 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)(feature-lite: 도메인은 `trials` 하나)를 따른다.
+역방향 import 금지. 폴더 배치 결정은 [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md)(feature-lite: 도메인은 `trials` 하나)를 따른다.
 
 ## 문서 지도 (무엇이 SoT인가)
 | 문서 | 역할 |
@@ -99,7 +102,7 @@ env 를 채우면 자동으로 n8n 프록시로 전환된다 — 코드 수정 �
 # 현재 계약 drift (작업 시 반드시 인지)
 
 계약(`docs/contract/`)은 갱신됐지만 `src/**` 는 아직 구버전이다. 프론트 반영 목록은
-[docs/contract/api-contract.md](docs/contract/api-contract.md) 의 체크리스트가 SoT:
+[docs/contract/api-contract.md](../docs/contract/api-contract.md) 의 체크리스트가 SoT:
 
 - `src/types/trial.ts` — `precheck_1/2/3` → `pre_trial_call_checks: boolean[]`, `student_name` 추가,
   `pre_call_done`/`post_call_done`/`call_queue_url` 제거 (백엔드에서 이미 스코프 아웃).
@@ -107,57 +110,3 @@ env 를 채우면 자동으로 n8n 프록시로 전환된다 — 코드 수정 �
 - `computeStats`(`features/trials/lib/aggregate.ts`) 의 pre/post-call 필드 및 StatCards 두 타일 제거.
 
 요청/응답 모양을 바꿀 때는 **openapi.yaml 을 먼저 고치고** n8n 과 프론트가 각자 수렴한다.
-
-# Product Spec
-
-이 프로젝트의 제품 요구사항은 [docs/PRD.md](docs/PRD.md) 에 정의되어 있다.
-기능 구현·API·화면 작업 전 반드시 해당 문서를 참조한다.
-
-핵심 요약:
-- **목적**: Sales팀 3명용 내부 "오늘의 Trial" 대시보드 (MVP).
-- **벤치마킹**: https://naonow-bi.vercel.app/sales_today_trials — **기능/정보구조 참조용**일 뿐. 디자인은 베끼지 않으며, PRD에 명시된 최소 기능만 구현한다.
-- **디자인**: Modern + Glassmorphism (다크 기본). 토큰·규칙·컴포넌트 레시피는 [docs/design.md](docs/design.md) 가 단일 진실 공급원 — UI/스타일 작업 전 반드시 준수한다. (개요는 PRD §6.0.)
-- **아키텍처**: 브라우저 → Next.js Route Handler(토큰·n8n URL 은닉) → n8n Webhook(고정 IP) → GCP Cloud SQL. 프론트는 DB에 직접 붙지 않는다.
-- **인증**: 서버 전용 환경변수 `N8N_BASE_URL`, `N8N_API_TOKEN` (절대 `NEXT_PUBLIC_` 금지). n8n 호출 시 `x-api-key` 헤더 부착.
-- **프록시 엔드포인트**: 위 "아키텍처 › 엔드포인트 4개" 표 참조 (PRD §7·§8 은 3개 시절 기준 — 계약 SoT 는 `docs/contract/openapi.yaml`).
-- **최신성**: TanStack Query `staleTime` 60s + `refetchOnWindowFocus`. 체크박스는 optimistic update(실패 시 롤백).
-- **명시적 비목표**: 로그인 시스템, 실시간 동기화(웹소켓/폴링), 페이지네이션, 정렬/필터/검색 UI, 모바일 최적화 → 구현하지 않는다 (over-engineering 방지).
-- **데이터 계약**: 실제 DB 스키마는 미확정. PRD §9 항목은 구현 전 확인이 필요하다.
-
-# Commit Convention
-
-이 저장소의 모든 commit 메시지는 반드시 아래 형태를 따른다.
-
-```
-[Type]: Description
-```
-
-- `[Type]` — 대괄호로 감싼 변경 유형 (아래 표 중 하나).
-- `: ` — 콜론 + 공백 한 칸.
-- `Description` — 변경 내용을 명령형 현재시제로 간결하게.
-
-## 예시
-
-```
-[Feat]: add trials list route handler
-[Fix]: correct precheck stage validation
-[Docs]: update README data contract section
-```
-
-## Type 목록
-
-| Type | 용도 |
-|---|---|
-| `Feat` | 새 기능 |
-| `Fix` | 버그 수정 |
-| `Docs` | 문서 변경 |
-| `Style` | 포맷/세미콜론 등 동작에 영향 없는 변경 |
-| `Refactor` | 기능 변화 없는 코드 구조 개선 |
-| `Test` | 테스트 추가/수정 |
-| `Chore` | 빌드/설정/의존성 등 그 외 |
-
-## 규칙
-
-- Type 은 위 표의 값만 사용한다.
-- 표기는 위 표 그대로 쓴다 (`[Feat]`, `[Fix]` …).
-- 한 commit 은 하나의 논리적 변경만 담는다.
