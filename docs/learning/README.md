@@ -18,6 +18,8 @@
 | 007 | [플랫폼이 URL 모양을 바꿔버릴 때](./007-platform-owns-the-url.md) | n8n 은 동적 경로에 UUID 를 강제로 붙인다. 조건부 규칙은 조건이 거짓인 쪽도 확인해야 끝난다 |
 | 008 | [크로스 스키마 FK 와 `REFERENCES` 권한](./008-cross-schema-fk-and-references-privilege.md) | SELECT 된다고 FK 를 걸 수 있는 게 아니다. 남의 스키마에 얹을 땐 관례를 실측한다 |
 | 009 | [naive timestamp 에 UTC 가 들어 있을 때](./009-naive-timestamp-holding-utc.md) | `AT TIME ZONE` 의 방향은 우리가 가정한다. 컬럼에 걸면 인덱스까지 죽는다 |
+| 010 | [FK 가 없으면 존재 검증은 쿼리가 한다](./010-existence-check-without-fk.md) | 없는 부모로도 upsert 가 조용히 성공한다. `SELECT ... RETURNING` 의 0행을 신호로 쓴다 |
+| 011 | [계약이 침묵하면 구현마다 갈린다](./011-contract-silence-observable-behavior.md) | 스키마 검증기는 모양만 본다. 정렬은 적어야 검증 대상이 된다 |
 
 ## 노트 작성 규칙 (에이전트·사람 공통)
 
