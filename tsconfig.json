@@ -11,6 +11,9 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
+    // test/contract-check.mts 는 node 로 직접 실행되므로 ESM 규칙상 import 에 .ts 확장자가 필요하다.
+    // noEmit 이므로 emit 충돌은 없다.
+    "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
     "incremental": true,
     "plugins": [
@@ -30,5 +33,10 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    // docs/backend/workflow.ts 는 배포된 n8n 워크플로우의 기록 사본이다.
+    // 미설치 패키지 @n8n/workflow-sdk 를 import 하며 앱 번들에 포함되지 않으므로 타입체크 대상이 아니다.
+    "docs"
+  ]
 }
