@@ -4,7 +4,7 @@ import { gotoDashboard, openDetail, SHEET } from "./helpers";
 test.describe("PTC 콜 메모 (MDXEditor WYSIWYG)", () => {
   test("'# ' 입력 시 그 자리에서 H1 로 렌더된다", async ({ page }) => {
     await gotoDashboard(page);
-    await openDetail(page, "10432");
+    await openDetail(page, "20443");
 
     const editor = page.locator('.ptc-notes [contenteditable="true"]');
     await editor.click();
@@ -22,7 +22,7 @@ test.describe("PTC 콜 메모 (MDXEditor WYSIWYG)", () => {
 
   test("목록 마크다운도 렌더된다", async ({ page }) => {
     await gotoDashboard(page);
-    await openDetail(page, "10517");
+    await openDetail(page, "22238");
 
     const editor = page.locator('.ptc-notes [contenteditable="true"]');
     await editor.click();
@@ -35,7 +35,7 @@ test.describe("PTC 콜 메모 (MDXEditor WYSIWYG)", () => {
 
   test("메모가 trial 별 localStorage 에 유지된다", async ({ page }) => {
     await gotoDashboard(page);
-    await openDetail(page, "10432");
+    await openDetail(page, "20443");
 
     const editor = page.locator('.ptc-notes [contenteditable="true"]');
     await editor.click();
@@ -46,7 +46,7 @@ test.describe("PTC 콜 메모 (MDXEditor WYSIWYG)", () => {
     await expect(page.locator(SHEET)).toHaveCount(0);
 
     // 같은 행 다시 열면 유지
-    await openDetail(page, "10432");
+    await openDetail(page, "20443");
     await expect(page.locator(".ptc-notes")).toContainText("유지되는 메모 텍스트");
   });
 });

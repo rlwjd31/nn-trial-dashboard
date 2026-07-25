@@ -62,8 +62,15 @@ export function TrialsTable({ trials, onRowClick }: Props) {
                 <TableCell className="font-medium tabular-nums">
                   {formatTrialTime(t.trial_time)}
                 </TableCell>
-                <TableCell className="text-muted-foreground">
-                  #{t.student_id}
+                <TableCell>
+                  <div className="flex flex-col">
+                    <span className="font-medium text-foreground">
+                      {t.student_name}
+                    </span>
+                    <span className="text-xs tabular-nums text-muted-foreground">
+                      #{t.student_id}
+                    </span>
+                  </div>
                 </TableCell>
                 <TableCell className="max-w-[260px] truncate" title={t.student_email}>
                   {t.student_email}

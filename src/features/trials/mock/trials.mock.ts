@@ -8,6 +8,7 @@
 //   status               ← "Lessons".status        (scheduled | approved | canceled)
 //                          ⚠ 취소값 실데이터 철자는 'canceled'(L 하나) — lessons.md §샘플 참조
 //   student_id           ← "Students".id
+//   student_name         ← "Students"."firstName" + "lastName" (표시용 조합)
 //   level                ← "Students".level (+ "langLevel" 텍스트)
 //   student_email        ← "Users".email           (Students.userId → Users)
 //   student_phone_number ← "Users"."phoneNumber"
@@ -42,6 +43,10 @@ interface TrialSeed {
   hour: number;
   minute: number;
   student_id: string;
+  /** Students.firstName */
+  student_first_name: string;
+  /** Students.lastName */
+  student_last_name: string;
   student_email: string;
   student_phone_number: string;
   mentor_id: string;
@@ -67,9 +72,11 @@ const SEED: TrialSeed[] = [
     trial_id: "48213",
     hour: 9,
     minute: 0,
-    student_id: "10432",
-    student_email: "jiwoo.parent@gmail.com",
-    student_phone_number: "+82 10-2345-6789",
+    student_id: "20443",
+    student_first_name: "Hyeong Chang",
+    student_last_name: "Lim",
+    student_email: "hyeonchang2002@gmail.com",
+    student_phone_number: "+82 10-9469-4696",
     mentor_id: "512",
     mentor_name: "Emma Wilson",
     mentor_tier: "elite",
@@ -89,9 +96,11 @@ const SEED: TrialSeed[] = [
     trial_id: "48219",
     hour: 10,
     minute: 30,
-    student_id: "10517",
-    student_email: "seoyeon.mom@naver.com",
-    student_phone_number: "+82 10-8821-4402",
+    student_id: "22238",
+    student_first_name: "Andrew",
+    student_last_name: "Park",
+    student_email: "andrew@naonow.com",
+    student_phone_number: "+82 10-8347-2178",
     mentor_id: "530",
     mentor_name: "James Carter",
     mentor_tier: "basic",
@@ -111,9 +120,11 @@ const SEED: TrialSeed[] = [
     trial_id: "48224",
     hour: 11,
     minute: 0,
-    student_id: "10588",
-    student_email: "dohyun.kim82@gmail.com",
-    student_phone_number: "+82 10-3390-1188",
+    student_id: "13381",
+    student_first_name: "Logan",
+    student_last_name: "Park",
+    student_email: "logan@naonow.com",
+    student_phone_number: "+82 10-4029-2178",
     mentor_id: "512",
     mentor_name: "Emma Wilson",
     mentor_tier: "elite",
@@ -134,6 +145,8 @@ const SEED: TrialSeed[] = [
     hour: 13,
     minute: 0,
     student_id: "10602",
+    student_first_name: "Yuna",
+    student_last_name: "Lee",
     student_email: "yuna.lee.family@gmail.com",
     student_phone_number: "+82 10-7742-9931",
     mentor_id: "544",
@@ -156,6 +169,8 @@ const SEED: TrialSeed[] = [
     hour: 14,
     minute: 0,
     student_id: "10644",
+    student_first_name: "Minjun",
+    student_last_name: "Park",
     student_email: "minjun.parent@kakao.com",
     student_phone_number: "+82 10-2201-5567",
     mentor_id: "530",
@@ -178,6 +193,8 @@ const SEED: TrialSeed[] = [
     hour: 15,
     minute: 30,
     student_id: "10671",
+    student_first_name: "Hayoon",
+    student_last_name: "Jung",
     student_email: "hayoon.mom2@naver.com",
     student_phone_number: "+82 10-9987-1120",
     mentor_id: "558",
@@ -200,6 +217,8 @@ const SEED: TrialSeed[] = [
     hour: 16,
     minute: 0,
     student_id: "10688",
+    student_first_name: "Seojun",
+    student_last_name: "Kim",
     student_email: "seojun.kim.dad@gmail.com",
     student_phone_number: "+82 10-4456-7788",
     mentor_id: "561",
@@ -222,6 +241,8 @@ const SEED: TrialSeed[] = [
     hour: 17,
     minute: 0,
     student_id: "10702",
+    student_first_name: "Chaewon",
+    student_last_name: "Choi",
     student_email: "chaewon.family@naver.com",
     student_phone_number: "+82 10-3322-6655",
     mentor_id: "544",
@@ -244,6 +265,8 @@ const SEED: TrialSeed[] = [
     hour: 18,
     minute: 0,
     student_id: "10744",
+    student_first_name: "Junseo",
+    student_last_name: "Kang",
     student_email: "junseo.parent7@gmail.com",
     student_phone_number: "+82 10-6610-2299",
     mentor_id: "530",
@@ -266,6 +289,8 @@ const SEED: TrialSeed[] = [
     hour: 19,
     minute: 0,
     student_id: "10769",
+    student_first_name: "Eunwoo",
+    student_last_name: "Cho",
     student_email: "eunwoo.mom@kakao.com",
     student_phone_number: "+82 10-1145-8890",
     mentor_id: "558",
@@ -288,6 +313,8 @@ const SEED: TrialSeed[] = [
     hour: 19,
     minute: 30,
     student_id: "10781",
+    student_first_name: "Sohee",
+    student_last_name: "Yoon",
     student_email: "ssohee.family@naver.com",
     student_phone_number: "+82 10-7788-3410",
     mentor_id: "561",
@@ -310,6 +337,8 @@ const SEED: TrialSeed[] = [
     hour: 20,
     minute: 0,
     student_id: "10799",
+    student_first_name: "Taeyang",
+    student_last_name: "Han",
     student_email: "taeyang.parent@gmail.com",
     student_phone_number: "+82 10-9901-4423",
     mentor_id: "512",
@@ -348,6 +377,11 @@ function pad(n: number): string {
   return n.toString().padStart(2, "0");
 }
 
+/** firstName + lastName → 표시용 이름 (로마자 표기: "Given Family"). */
+function studentName(seed: TrialSeed): string {
+  return `${seed.student_first_name} ${seed.student_last_name}`;
+}
+
 function precheckOf(seed: TrialSeed, stage: PrecheckStage): boolean {
   const override = precheckOverrides.get(seed.trial_id)?.[stage];
   if (override !== undefined) return override;
@@ -370,6 +404,7 @@ function toListItem(
     trial_id: seed.trial_id,
     trial_time: `${dateStr}T${pad(seed.hour)}:${pad(seed.minute)}:00+09:00`,
     student_id: seed.student_id,
+    student_name: studentName(seed),
     student_email: seed.student_email,
     student_phone_number: seed.student_phone_number,
     mentor_name: seed.mentor_name,
@@ -401,6 +436,7 @@ export function getMockTrialDetail(
   return {
     trial_id: seed.trial_id,
     student_id: seed.student_id,
+    student_name: studentName(seed),
     student_email: seed.student_email,
     student_phone_number: seed.student_phone_number,
     level: seed.level,

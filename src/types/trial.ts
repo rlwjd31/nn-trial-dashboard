@@ -9,6 +9,8 @@ export interface TrialListItem {
   /** ISO8601, KST 오프셋 포함. 예: "2026-07-24T14:00:00+09:00" */
   trial_time: string;
   student_id: string;
+  /** 표시용 학생 이름 (Students.firstName + lastName 조합) */
+  student_name: string;
   student_email: string;
   student_phone_number: string;
   mentor_name: string;
@@ -32,6 +34,8 @@ export interface TrialsTodayResponse {
 export interface TrialDetail {
   trial_id: string;
   student_id: string;
+  /** 표시용 학생 이름 (Students.firstName + lastName 조합) */
+  student_name: string;
   student_email: string;
   student_phone_number: string;
   level: string;

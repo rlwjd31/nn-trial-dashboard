@@ -37,6 +37,7 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
 function DetailBody({ detail }: { detail: TrialDetail }) {
   return (
     <dl className="flex flex-col gap-3">
+      <Field label="Name" value={detail.student_name} />
       <Field label="Student ID" value={`#${detail.student_id}`} />
       <Field label="Email" value={detail.student_email} />
       <Field label="Phone" value={detail.student_phone_number} />
