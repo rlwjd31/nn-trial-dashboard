@@ -96,6 +96,7 @@ LEFT JOIN automation.trial_dashboard_state d ON d.lesson_id = l.id
 WHERE l."isTrial" = TRUE
   AND l."startAt" >= ($1::timestamptz AT TIME ZONE 'UTC')
   AND l."startAt" <  ($2::timestamptz AT TIME ZONE 'UTC')
+-- DESC 는 의도다: 콜 리스트라 늦은 시각이 상단에 온다. 오름차순으로 되돌리지 말 것(openapi 에 명시).
 ORDER BY l."startAt" DESC;` } }
 });
 const todayAggregate = node({

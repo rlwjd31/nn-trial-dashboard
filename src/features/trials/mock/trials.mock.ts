@@ -339,10 +339,20 @@ function toListItem(
   };
 }
 
-/** GET /api/trials (n8n /webhook/trials) 대체 — 오늘의 trial 목록 */
+/**
+ * GET /api/trials (n8n /webhook/trials) 대체 — 오늘의 trial 목록.
+ *
+ * 정렬은 `trial_time` **내림차순**이다 — 콜 리스트라 늦은 시각이 상단에 온다(openapi 에 명시).
+ * SEED 는 읽기 편하도록 오름차순으로 두고 여기서 뒤집는다. 같은 날짜·같은 오프셋 문자열이라
+ * 사전순 비교가 곧 시간순 비교다.
+ */
 export function getMockTrialsToday(now: Date = new Date()): TrialsTodayResponse {
   const dateStr = todayKstDate(now);
-  return { trials: SEED.map((s, i) => toListItem(s, dateStr, i)) };
+  return {
+    trials: SEED.map((s, i) => toListItem(s, dateStr, i)).sort((a, b) =>
+      b.trial_time.localeCompare(a.trial_time),
+    ),
+  };
 }
 
 /** GET /api/trials/{id} (n8n /webhook/<hookId>/trials/<id>) 대체 — 단건 상세 (없으면 null) */
