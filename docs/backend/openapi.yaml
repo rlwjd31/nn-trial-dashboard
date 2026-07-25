@@ -148,6 +148,7 @@ components:
         - trial_id
         - trial_time
         - student_id
+        - student_name
         - student_email
         - student_phone_number
         - mentor_name
@@ -164,6 +165,9 @@ components:
           description: ISO8601, KST offset 포함
           example: "2026-07-24T14:00:00+09:00"
         student_id: { type: string, example: "10432" }
+        student_name:
+          type: string
+          description: 학생 이름(영문 firstName+lastName, 없으면 koreanEquivalent)
         student_email: { type: string, format: email }
         student_phone_number: { type: string, example: "+82 10-2345-6789" }
         mentor_name: { type: string, example: "Emma Wilson" }
@@ -199,6 +203,7 @@ components:
       required:
         - trial_id
         - student_id
+        - student_name
         - student_email
         - student_phone_number
         - level
@@ -210,6 +215,9 @@ components:
       properties:
         trial_id: { type: string }
         student_id: { type: string }
+        student_name:
+          type: string
+          description: 학생 이름(영문 firstName+lastName, 없으면 koreanEquivalent)
         student_email: { type: string, format: email }
         student_phone_number: { type: string }
         level:

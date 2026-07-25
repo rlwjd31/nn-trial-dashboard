@@ -13,7 +13,7 @@
 | 표 컬럼 | 필드 | 가공 |
 |---|---|---|
 | Time | `trial_time` | `formatTrialTime` → KST `HH:mm` |
-| Student | `student_id` | `#{id}` |
+| Student | `student_name` (+ `student_id`) | 이름 표시(보조로 #id). ⚠ 현재 프론트는 #id만 → 이름 표시로 수정 필요 |
 | Email | `student_email` | truncate |
 | Phone | `student_phone_number` | 그대로 |
 | Mentor | `mentor_name` | 그대로 |
@@ -40,7 +40,7 @@
 ### 1.3 상세 패널 `TrialDetailSheet` — 소비: `TrialDetail`
 | 표시 | 필드 |
 |---|---|
-| Student ID / Email / Phone / Level | `student_id` `student_email` `student_phone_number` `level` |
+| Name / Student ID / Email / Phone / Level | `student_name` `student_id` `student_email` `student_phone_number` `level` |
 | Mentor / Gender | `mentor_name` `mentor_id` `mentor_gender` |
 | Interests | `interests[]` (칩 나열, 빈 배열이면 "—") |
 | Trial date | `trial_date` |

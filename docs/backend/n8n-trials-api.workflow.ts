@@ -44,6 +44,7 @@ const todayQuery = node({
   l.id::text AS trial_id,
   to_char(l."startAt" AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD"T"HH24:MI:SS') || '+09:00' AS trial_time,
   s.id::text AS student_id,
+  COALESCE(NULLIF(TRIM(CONCAT_WS(' ', s."firstName", s."lastName")), ''), s."koreanEquivalent", '') AS student_name,
   u.email AS student_email,
   u."phoneNumber" AS student_phone_number,
   COALESCE(NULLIF(TRIM(CONCAT_WS(' ', m."firstName", m."lastName")), ''), '') AS mentor_name,
@@ -83,6 +84,7 @@ const detailQuery = node({
       query: `SELECT
   l.id::text AS trial_id,
   s.id::text AS student_id,
+  COALESCE(NULLIF(TRIM(CONCAT_WS(' ', s."firstName", s."lastName")), ''), s."koreanEquivalent", '') AS student_name,
   u.email AS student_email,
   u."phoneNumber" AS student_phone_number,
   s.level::text || COALESCE(' · ' || s."langLevel", '') AS level,
