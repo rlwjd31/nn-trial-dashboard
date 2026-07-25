@@ -23,6 +23,20 @@ test.describe("상세 시트", () => {
     );
   });
 
+  test("admin panel · call-queue 링크가 student_id 로 생성된다", async ({
+    page,
+  }) => {
+    await gotoDashboard(page);
+    await openDetail(page, "20443");
+    const sheet = page.locator(SHEET);
+    await expect(
+      sheet.locator('a[href="https://admin.naonow.com/students/20443/edit"]'),
+    ).toBeVisible();
+    await expect(
+      sheet.locator('a[href="https://admin.naonow.com/call-queue/20443"]'),
+    ).toBeVisible();
+  });
+
   test("시트 폭을 드래그로 넓힐 수 있다", async ({ page }) => {
     await gotoDashboard(page);
     await openDetail(page, "20443");

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ExternalLinkIcon } from "lucide-react";
+import { ExternalLinkIcon, SquarePenIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -138,15 +138,37 @@ export function TrialDetailSheet({ trialId, open, onOpenChange }: Props) {
             targetNumber={detail?.student_phone_number}
             className="w-full"
           />
+
+          {/* 학생 관리 admin panel — 로그인·Reschedule·학생 메타 정보 수정 */}
           <Button
             variant="outline"
             className="w-full"
-            disabled={!detail?.call_queue_url}
-            nativeButton={!detail?.call_queue_url}
+            disabled={!detail}
+            nativeButton={!detail}
             render={
-              detail?.call_queue_url ? (
+              detail ? (
                 <a
-                  href={detail.call_queue_url}
+                  href={`https://admin.naonow.com/students/${detail.student_id}/edit`}
+                  target="_blank"
+                  rel="noreferrer"
+                />
+              ) : undefined
+            }
+          >
+            <SquarePenIcon />
+            학생 관리 · 일정 변경
+          </Button>
+
+          {/* Call queue 이동 — 마지막 path 는 student_id */}
+          <Button
+            variant="outline"
+            className="w-full"
+            disabled={!detail}
+            nativeButton={!detail}
+            render={
+              detail ? (
+                <a
+                  href={`https://admin.naonow.com/call-queue/${detail.student_id}`}
                   target="_blank"
                   rel="noreferrer"
                 />
