@@ -1,7 +1,11 @@
+// ⚠️ SKIP: mock 제거(라이브 n8n 직결)로 이 스펙의 기대값이 무효해졌다.
+// 재작성 전제: ① n8n 워크플로우 활성화 ② 기대값을 라이브 응답에서 재도출
+// ③ 쓰기(체크·메모) 테스트는 프로덕션 DB(automation.trial_dashboard_state)에 실제로 쓰므로
+//    전용 테스트 trial 을 정하거나 원복 경로를 보장할 것.
 import { expect, test } from "@playwright/test";
 import { gotoDashboard, kpiValue, row } from "./helpers";
 
-test.describe("dashboard", () => {
+test.describe.skip("dashboard", () => {
   test.beforeEach(async ({ page }) => {
     await gotoDashboard(page);
   });
