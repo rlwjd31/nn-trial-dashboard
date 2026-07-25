@@ -60,13 +60,13 @@ trial-dashboard/            ← main 워크트리. 공용 규칙·문서의 단�
 
 이 저장소는 두 도메인으로 나뉜다. 작업 전 자기 도메인 가이드를 읽고, 경계는 계약을 따른다.
 
-- **공유 계약(boundary)**: [docs/contract/openapi.yaml](docs/contract/openapi.yaml) = API 모양의 단일 진실 공급원(SoT).
-  변경 프로토콜·핸드오프: [docs/contract/api-contract.md](docs/contract/api-contract.md).
+- **공유 계약(boundary)**: [backend/docs/contract/openapi.yaml](backend/docs/contract/openapi.yaml) = API 모양의 단일 진실 공급원(SoT).
+  변경 프로토콜·핸드오프: [backend/docs/contract/api-contract.md](backend/docs/contract/api-contract.md).
 - **프론트 도메인**: UI(`src/features`, `src/components`) + 프록시(`src/app/api`).
   가이드 = [docs/design.md](docs/design.md)(디자인·설계, 위에서 자동 로드) + [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)(폴더 구조, feature-lite: 도메인은 `features/trials` 하나뿐).
   기능 스펙(해당 기능을 건드릴 때만): [docs/cloudtalk-call-button.md](docs/cloudtalk-call-button.md)(`ct+tel:` 딥링크·E.164) ·
   [docs/ptc-call-notes.md](docs/ptc-call-notes.md)(MDXEditor, `dynamic{ssr:false}`) · [docs/testing.md](docs/testing.md).
-- **백엔드 도메인**: n8n 워크플로우 + DB. 가이드 = [docs/backend/guide.md](docs/backend/guide.md).
+- **백엔드 도메인**: n8n 워크플로우 + DB. 가이드 = [backend/docs/backend/guide.md](backend/docs/backend/guide.md).
   배포 SoT = n8n 클라우드 워크플로우. **DDL·DB 변경은 DB 소유자**가 한다(`public` 스키마는 읽기 전용).
 - **규칙**: 프론트는 `src/**` 만, 백엔드는 n8n/DB 만 건드린다. 엔드포인트·응답 모양의 최신 정의는 **계약(openapi)이 우선**한다
   (아래 Product Spec 요약이 계약과 다르면 계약이 SoT).
@@ -76,18 +76,21 @@ trial-dashboard/            ← main 워크트리. 공용 규칙·문서의 단�
 브랜치 간에는 대화가 없다. **문서가 유일한 알림 채널**이므로, 한 쪽만 고치고 끝내면 상대 도메인은 조용히 깨진다.
 경계(요청·응답 모양, 경로, 에러 형태)를 건드리는 변경은 예외 없이 아래 순서를 지킨다.
 
-1. **`docs/contract/openapi.yaml` 을 먼저 고친다.** 구현보다 계약이 앞선다.
-2. **`docs/contract/api-contract.md` 의 상대 도메인 체크리스트에 항목을 추가한다** —
+1. **`backend/docs/contract/openapi.yaml` 을 먼저 고친다.** 구현보다 계약이 앞선다.
+2. **`backend/docs/contract/api-contract.md` 의 상대 도메인 체크리스트에 항목을 추가한다** —
    "무엇이 바뀌었고, 상대가 어느 파일을 어떻게 고쳐야 하는가"를 적는다. 이 항목이 알림이다.
 3. 자기 도메인을 수렴시키고, 상대 도메인 항목은 체크리스트에 **남겨둔 채** 커밋한다.
-4. 공용 문서 수정이므로 **이 작업은 `main` 워크트리에서** 한다 (도메인 폴더에서 `docs/**` 를 만들지 말 것).
+4. 계약 문서(`contract/**`)와 백엔드 문서(`backend/**`)는 **`backend` 브랜치가 소유**한다 →
+   이 둘의 수정은 `backend/` 워크트리에서 한다. `main` 이 소유하는 공용 문서는
+   `docs/PRD.md` · `docs/design.md` · `docs/ARCHITECTURE.md` · 기능 스펙 문서들이다.
+   어느 쪽이든 **사본을 만들지 말 것** (소유 브랜치 한 곳에만 둔다).
 
 | 이런 변경이 생기면 | 상대가 해야 할 일 |
 |---|---|
 | 백엔드: 응답 필드 추가·삭제·개명, 타입 변경 | `src/types/trial.ts` → `lib/api.ts` → route handler → hooks → components → mock → `e2e/` 순으로 한 번에 수렴 |
 | 백엔드: 엔드포인트 경로·메서드 변경 | `src/app/api/**` 폴더명 + `lib/api.ts` 호출 경로 수정 |
 | 백엔드: 에러 응답 형태·상태코드 변경 | optimistic 롤백·토스트 경로가 여전히 맞는지 확인 |
-| 프론트: 화면에 새 필드가 필요해짐 | [docs/contract/frontend-data-needs.md](docs/contract/frontend-data-needs.md) 에 근거를 적고 n8n 쿼리에 컬럼 추가 (DDL 필요 시 DB 소유자) |
+| 프론트: 화면에 새 필드가 필요해짐 | [backend/docs/contract/frontend-data-needs.md](backend/docs/contract/frontend-data-needs.md) 에 근거를 적고 n8n 쿼리에 컬럼 추가 (DDL 필요 시 DB 소유자) |
 | 양쪽: 계약과 코드가 이미 어긋난 걸 발견 | 체크리스트에 항목을 추가하고, 만지는 파일 범위 안에서 함께 정리 |
 
 # Product Spec
@@ -102,10 +105,13 @@ trial-dashboard/            ← main 워크트리. 공용 규칙·문서의 단�
 - **아키텍처**: 브라우저 → Next.js Route Handler(토큰·n8n URL 은닉) → n8n Webhook(고정 IP) → GCP Cloud SQL. 프론트는 DB에 직접 붙지 않는다.
 - **인증**: 서버 전용 환경변수 `N8N_BASE_URL`, `N8N_API_TOKEN` (절대 `NEXT_PUBLIC_` 금지). n8n 호출 시 `x-api-key` 헤더 부착.
 - **프록시 엔드포인트**(계약 기준): `/api/trials`(GET, no-store) · `/api/trials/{id}`(GET) · `/api/trials/pre-trial-call-check`(PATCH) · `/api/trials/note`(PATCH).
-  ⚠️ 현재 프론트 코드는 구(舊) 이름(`/api/trials/precheck`)에 머물러 있고 `note` 라우트가 없다 — **계약 미수렴 상태**. 미반영 항목 목록은 [docs/contract/api-contract.md](docs/contract/api-contract.md) "프론트 변경 체크리스트".
+  ⚠️ 현재 프론트 코드는 구(舊) 이름(`/api/trials/precheck`)에 머물러 있고 `note` 라우트가 없다 — **계약 미수렴 상태**. 미반영 항목 목록은 [backend/docs/contract/api-contract.md](backend/docs/contract/api-contract.md) "프론트 변경 체크리스트".
 - **최신성**: TanStack Query `staleTime` 60s + `refetchOnWindowFocus`. 체크박스는 optimistic update(실패 시 롤백).
 - **명시적 비목표**: 로그인 시스템, 실시간 동기화(웹소켓/폴링), 페이지네이션, 정렬/필터/검색 UI, 모바일 최적화 → 구현하지 않는다 (over-engineering 방지).
-- **데이터 계약**: `public` 스키마는 라이브 확인 완료([docs/backend/guide.md](docs/backend/guide.md) §4). 다만 **타임존(`startAt`) 은 미해결** 상태이고, PRD §9 의 나머지 미확정 항목은 구현 전 확인이 필요하다.
+- **데이터 계약**: `public` 스키마 라이브 확인 완료([backend/docs/backend/guide.md](backend/docs/backend/guide.md) §4).
+  타임존도 해결됨 — `Lessons.startAt` 은 naive **UTC** 저장이므로 KST 변환은
+  `startAt AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul'` (배포 쿼리 보정 대기, guide.md §4-2).
+  남은 미확정: sales_rep 표시명 소스(PRD §9).
 
 # Commit Convention
 
