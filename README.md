@@ -1,71 +1,73 @@
-# Sales Today-Trials Dashboard
+# Trial Dashboard — backend (API 계층 + 계약)
 
-Sales 팀 내부용 "오늘의 Trial" 대시보드 (MVP). 브라우저 → Vercel Route
-Handler → n8n Webhook → GCP Cloud SQL 구조로, n8n 토큰과 URL은 서버에만 둔다.
+`trial-dashboard` 레포의 **`backend` 브랜치**. 담당 범위는 두 가지다:
 
-## 기술 스택
+1. **n8n 워크플로우 + API 생성** — n8n Webhook(→ GCP Cloud SQL)과, 그것을 프록시하는
+   Next Route Handler(`src/app/api/**`).
+2. **계약 검증** — 응답 데이터가 API 스펙과 실제로 일치하는지 대조(`pnpm test:contract`).
 
-- **Next.js 16** (App Router) + **TypeScript**
-- **Tailwind CSS 4**
-- **TanStack Query 5** (캐싱 + optimistic update)
-- 패키지 매니저: **pnpm**
-- 배포: Vercel
+**UI 는 이 브랜치에 없다.** 화면(컴포넌트·훅·스타일)은 `frontend` 브랜치 소유이며,
+두 브랜치는 코드 의존 없이 **JSON 계약**([docs/contract/openapi.yaml](docs/contract/openapi.yaml))으로만 연결된다.
+
+## 구조
+
+```
+docs/
+├─ contract/
+│  ├─ openapi.yaml            # ★ API 계약 SoT — 요청/응답 모양은 여기를 먼저 고친다
+│  ├─ api-contract.md         # 프론트 handoff (계약 변경 시 프론트 할 일)
+│  └─ frontend-data-needs.md  # UI 실사용 필드 역산
+└─ backend/
+   ├─ guide.md                # 백엔드 작업 규칙 (작업 전 필독)
+   ├─ data-layer.md           # 쿼리·스키마 설계 이력
+   ├─ ddl.sql                 # 상태 테이블 스펙 (DB 소유자가 실행)
+   └─ workflow.ts             # 배포된 n8n 워크플로우의 기록 사본 (배포 수단 아님)
+
+src/
+├─ app/api/trials/
+│  ├─ route.ts                        # GET   /api/trials  → n8n /webhook/trials/today
+│  ├─ [id]/route.ts                   # GET   /api/trials/{id} → /webhook/trials/detail
+│  ├─ pre-trial-call-check/route.ts   # PATCH → /webhook/trials/pre-trial-call-check
+│  └─ note/route.ts                   # PATCH → /webhook/trials/note
+├─ lib/
+│  ├─ n8n.ts                  # 서버 전용 프록시 (x-api-key 부착, server-only)
+│  └─ api.ts                  # 브라우저 → 자기 도메인 API 클라이언트 (계약의 클라 측면)
+├─ types/trial.ts             # 계약 타입 (openapi.yaml 의 TS 표현)
+└─ features/trials/mock/trials.mock.ts   # N8N_BASE_URL 미설정 시 서빙되는 mock
+
+test/contract-check.mts       # 응답 ↔ openapi.yaml 대조 러너 (의존성 0)
+```
 
 ## 환경 변수 (서버 전용)
 
-`.env.example` 참고. `NEXT_PUBLIC_` 접두어 절대 금지 — 브라우저에 노출되면 안 됨.
+`.env.example` 참고. `NEXT_PUBLIC_` 접두어 절대 금지.
 
 | 변수 | 설명 |
 |---|---|
-| `N8N_BASE_URL` | n8n Webhook 베이스 URL (끝 슬래시 없이) |
+| `N8N_BASE_URL` | n8n Webhook 베이스 URL (끝 슬래시 없이). **비어 있으면 mock 모드** |
 | `N8N_API_TOKEN` | n8n `x-api-key` 헤더 토큰 |
-
-로컬: `.env.local` 에 값 채우기 (git 무시됨).
-배포: Vercel 프로젝트 Environment Variables 에 등록.
 
 ## 개발
 
 ```bash
 pnpm install
-pnpm dev        # http://localhost:3000
-pnpm build      # 프로덕션 빌드
-pnpm lint       # eslint
+pnpm dev          # Route Handler 만 서빙 (화면 없음)
+pnpm build        # 프로덕션 빌드
+pnpm lint         # eslint
+
+pnpm test:contract                    # mock 응답을 openapi.yaml 과 대조 (서버 불필요)
+pnpm test:contract:selftest           # 검증기 자체 점검 (일부러 깨뜨린 응답을 잡는지)
+node test/contract-check.mts --base http://localhost:3000/api        # 실행 중인 라우트 대조
+node test/contract-check.mts --base https://<host>/webhook --n8n     # n8n 웹훅 직접 대조
 ```
 
-## 구조
+## 현재 상태 / 블로커
 
-```
-src/
-├─ app/
-│  ├─ layout.tsx           # Providers(TanStack Query) 주입
-│  ├─ providers.tsx        # QueryClient (staleTime 60s, refetchOnWindowFocus)
-│  ├─ page.tsx             # 대시보드 (현재 placeholder)
-│  └─ api/trials/
-│     ├─ route.ts          # GET  /api/trials         → n8n /webhook/trials/today
-│     ├─ [id]/route.ts     # GET  /api/trials/[id]     → n8n /webhook/trials/detail
-│     └─ precheck/route.ts # PATCH /api/trials/precheck → n8n /webhook/trials/precheck
-├─ lib/
-│  ├─ n8n.ts               # 서버 전용 n8n 프록시 (x-api-key 부착)
-│  └─ api.ts               # 브라우저 → 자기 도메인 API 클라이언트
-└─ types/
-   └─ trial.ts             # API 계약 타입 (PRD 섹션 7)
-```
-
-## 진행 상태
-
-- [x] 마일스톤 2: Next.js 프로젝트 + Route Handler 3개(프록시 골격)
-- [ ] 마일스톤 1: n8n 워크플로우 3개 (프론트 이후 별도 진행)
-- [ ] 마일스톤 3: 목록 화면 + 대시보드 카드 + TanStack Query 연동
-- [ ] 마일스톤 4: 상세 패널 + CloudTalk 클릭 발신(`ct+tel:`) — docs/cloudtalk-call-button.md
-- [ ] 마일스톤 5: 체크박스 optimistic update + 롤백
-
-## ⚠️ 구현 전 확정 필요 (PRD 섹션 9 — 데이터 계약)
-
-`src/types/trial.ts` 는 PRD 논리 필드명 기준. 실제 DB 스키마 확인 후 조정:
-
-- trial 테이블명 / 오늘 필터 기준 컬럼 (`trial_time` or `trial_date`)
-- mentor tier(elite/basic) 저장 컬럼, `mentor_gender` 컬럼
-- `status` 가능한 값 목록
-- `pre_call_done` / `post_call_done` 판정 기준
-- `converted` 판정 기준
-- precheck 1·2·3 저장 위치 (별도 컬럼 vs 상태 테이블)
+- [x] n8n 워크플로우 "[Trial API] - Main" 4 엔드포인트 배포 (project Nao Now)
+- [x] Route Handler 4개 + mock 폴백
+- [x] 계약 검증 러너 (mock·라이브 모두 통과)
+- [ ] **`automation.trial_dashboard_state` 생성** — DB 소유자가 [ddl.sql](docs/backend/ddl.sql) 실행.
+      없으면 n8n 4 엔드포인트 전부 500 (`relation ... does not exist`).
+- [ ] **타임존 보정** — `Lessons.startAt` 은 naive **UTC** 저장인데 쿼리가 `AT TIME ZONE 'Asia/Seoul'`
+      만 적용 → 표시 시각 18시간 오차 + 오늘 필터 창 밀림. 상세는 [guide.md §4](docs/backend/guide.md).
+- [ ] **워크플로우 발행 + `x-api-key`(Header Auth)** — 현재 `active: false`, 인증 `none`.
