@@ -36,18 +36,41 @@
 | `Lessons.status` (isTrial=TRUE) | `approved`, `canceled`, `completed`, `paid` | trial 행에 `scheduled` 없음 |
 | `Students.level` | `1` (단일값) | 표시용 `level` 은 `level + langLevel` 조합 |
 
-### 4-2. ⚠ 타임존 — 해결됨(적용 대기)
-`Lessons.startAt` 은 `timestamp without time zone` 이고 **값은 UTC 로 저장**된다
-(`max("createdAt")` 가 `now()`(UTC)와 몇 초 차 → 확정. 시각 히스토그램도 KST 17–21시 피크로 일치).
+### 4-2. 타임존 — **수정 완료·배포됨** (2026-07-25)
 
-배포된 쿼리의 `l."startAt" AT TIME ZONE 'Asia/Seoul'` 은 naive 값을 *서울 시각으로 해석*해
-timestamptz 를 만들고 그것을 세션 TZ(UTC)로 렌더한다 → **9시간을 빼고 거기에 문자열 `+09:00` 을 붙인다.**
+`Lessons.startAt` 은 `timestamp without time zone` 인데 **값은 UTC** 다.
 
-- 결과: raw `2026-07-25 09:00`(= KST 18:00) → 응답 `2026-07-25T00:00:00+09:00` = **18시간 오차**.
-- 오늘 필터도 밀린다: 현재 조건은 raw ∈ [오늘 09:00, 내일 08:59] UTC 를 잡지만
-  올바른 창은 raw ∈ [어제 15:00, 오늘 14:59] UTC → **KST 00:00–17:59 시작 trial 누락 + 내일 오전 trial 혼입.**
-- **올바른 식**: `l."startAt" AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul'` (naive UTC → timestamptz → KST 벽시계).
-  `trial_time`·`trial_date`·오늘 필터 3곳 모두 동일하게 보정. SELECT 변환만 바꾸며 `public` 은 여전히 읽기만.
+**확정 근거** — 타임존이 명시된(`timestamptz`) 컬럼과 같은 lesson 을 31,567행 대조:
+
+| 대조 대상 | 비교 행 | `startAt`=UTC 가정 | `startAt`=KST 가정 |
+|---|---|---|---|
+| `automation.paid_class_reminder_log.class_start_at` | 28,791 | **28,784** | **0** |
+| `automation.phase1_lifecycle.trial_scheduled_at` | 2,776 | **2,776** | **0** |
+
+보조 근거: 최근 30일 trial 시작 시각 분포가 `naive+9h` 에서 15–21시 KST 로 몰린다
+(naive 를 그대로 KST 로 읽으면 저녁 시간대가 거의 0 이라 서비스 실태와 안 맞는다).
+
+**무엇이 틀렸었나** — naive 값에 `AT TIME ZONE 'Asia/Seoul'` 을 바로 걸면 PostgreSQL 은 문서대로
+("assuming the given value is in the named time zone") 그 값을 **서울 시각으로 가정**해 9시간을
+**뺀다.** 거기에 문자열 `+09:00` 을 붙여서 표시 **18시간 오차** + 오늘 창 밀림이 났다.
+
+**규칙은 하나: `naive(UTC) + 9h = KST 벽시계.`** 적용된 형태:
+```sql
+to_char(l."startAt" + interval '9 hours', 'YYYY-MM-DD"T"HH24:MI:SS') || '+09:00'  -- trial_time
+to_char(l."startAt" + interval '9 hours', 'YYYY-MM-DD')                            -- trial_date
+-- 오늘 창: [KST 오늘 00:00, 내일 00:00) 반열린 구간
+AND l."startAt" >= date_trunc('day', now() AT TIME ZONE 'Asia/Seoul') - interval '9 hours'
+AND l."startAt" <  date_trunc('day', now() AT TIME ZONE 'Asia/Seoul') - interval '9 hours' + interval '1 day'
+```
+- `Asia/Seoul` 은 고정 UTC+9·DST 없음(`pg_timezone_names` 확인) → `+9h` 산술과
+  `AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul'` 은 **동일 값**(실측). 짧은 쪽을 쓴다.
+- **컬럼을 함수로 감싸지 말 것.** 감싸면 `Lessons_mentorId_isMock_status_startAt_idx` 를 못 쓴다:
+  Bitmap Index Scan **6.85ms** → Parallel Seq Scan **27ms** (EXPLAIN ANALYZE 실측, 26.7만 행).
+- SELECT 변환만 바꿨고 `public` 은 여전히 읽기 전용이다.
+
+⚠ **수동 테스트 함정**: `(startAt AT TIME ZONE 'Asia/Seoul')::date` 류는 결과가
+**클라이언트 세션 TimeZone 에 따라 달라진다**(psql=UTC vs GUI=Asia/Seoul). 게다가 반환된 raw
+`startAt` 값은 UTC 라서 로컬 시각처럼 읽으면 "맞아 보인다". 검증 근거로 쓰지 말 것.
 
 ### 4-3. 현재 블로커
 1. **`automation.trial_dashboard_state` 없음** → LEFT JOIN 이라도 쿼리 전체 실패 → 4 엔드포인트 전부 500.

@@ -10,18 +10,40 @@
 > **확정**: precheck 횟수 + 학생 추가정보는 **trial-sales 전용 기능 영역** → 신규 테이블 DDL 을 기능 요구 기준으로 둔다(아래 §2).
 >
 > ⚠ **최종 반영(이 문서의 §2·§3 인라인 SQL보다 우선)** — 배포본은 아래 파일이 SoT다.
-> - 테이블: **`automation.trial_dashboard_state`** (snake_case). 컬럼 `lesson_id, pre_trial_call_checks (boolean[3]), sales_note, updated_at`. 작성자 추적(`updated_by`)은 제외(로그인 없음·rep 2명 → over-engineering). DDL: [ddl.sql](./ddl.sql).
+> - 테이블: **`automation.trial_dashboard_state`** (snake_case). 컬럼 `lesson_id, pre_trial_call_checks (boolean[3]), sales_note, created_at, updated_at`. 작성자 추적(`updated_by`)은 제외(로그인 없음·rep 2명 → over-engineering). DDL: [ddl.sql](./ddl.sql).
+>   **`public."Lessons"` 로의 FK 는 없다** — 접속 역할 `automation_coupons` 에 REFERENCES 권한이 없고(2026-07-25 라이브 확인), automation 스키마의 어떤 테이블도 public 로 FK 를 걸지 않는다.
 > - 워크플로우 쿼리(배포본 동기): [workflow.ts](./workflow.ts). public 원천 테이블은 `public."Lessons"` 처럼 스키마 수식.
 > - **스코프 축소**: `pre_call_done` / `post_call_done` 제거(구현 불요) → 목록 응답·KPI에서 빠짐. 프론트 StatCards의 두 타일도 제거 대상.
 > - 배포 워크플로우: "[Trial API] - Main" (id `OHSTgJsHd6337qgf`).
 >
-> ⚠ **타임존 보정(2026-07-25 라이브 확정, 아직 배포 미반영)** — 이 문서와 `workflow.ts` 의
-> `l."startAt" AT TIME ZONE 'Asia/Seoul'` 은 **틀렸다.** `Lessons.startAt` 은
-> `timestamp without time zone` 이고 값은 **UTC** 로 저장돼 있어, 위 식은 naive 값을 서울 시각으로
-> *해석*해 9시간을 빼고 문자열 `+09:00` 을 덧붙인다(표시 18시간 오차 + 오늘 필터 창 밀림).
-> 올바른 식은 **`l."startAt" AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul'`** 이며
-> `trial_time` · `trial_date` · 오늘 날짜 필터 3곳 모두 적용해야 한다.
-> 근거와 영향 범위: [guide.md §4-2](./guide.md).
+> ⚠ **타임존 (2026-07-25 확정 · 배포 반영 완료)** — **아래 §3 의 인라인 SQL 은 이 점에서 낡았다.**
+> `Lessons.startAt` 은 `timestamp without time zone` 인데 **값은 UTC** 다.
+>
+> **확정 근거(추론 아님)** — 타임존이 명시된 컬럼과 31,567행 대조:
+> `automation.paid_class_reminder_log.class_start_at` **28,784/28,791 일치** ·
+> `automation.phase1_lifecycle.trial_scheduled_at` **2,776/2,776 일치** · **KST 가정은 양쪽 0건.**
+> 보조 근거: trial 시작 시각 분포가 `naive+9h` 에서 15–21시 KST 로 몰린다(naive 그대로면 저녁이 텅 빔).
+>
+> naive 값에 `AT TIME ZONE 'Asia/Seoul'` 을 **바로** 걸면 PostgreSQL 은 문서대로
+> ("assuming the given value is in the named time zone") 그 값을 서울 시각으로 **가정**해 9시간을
+> **뺀다** → 표시 **18시간 오차** + 오늘 창 밀림. 배포본이 이 상태였고, 지금은 고쳤다.
+>
+> **규칙은 하나다: `naive(UTC) + 9h = KST 벽시계.`**
+> ```sql
+> -- 표시
+> to_char(l."startAt" + interval '9 hours', 'YYYY-MM-DD"T"HH24:MI:SS') || '+09:00'  -- trial_time
+> to_char(l."startAt" + interval '9 hours', 'YYYY-MM-DD')                            -- trial_date
+> -- 오늘 창: [KST 오늘 00:00, 내일 00:00) 을 naive-UTC 로 표현 (컬럼을 감싸지 않아 인덱스 사용 가능)
+> AND l."startAt" >= date_trunc('day', now() AT TIME ZONE 'Asia/Seoul') - interval '9 hours'
+> AND l."startAt" <  date_trunc('day', now() AT TIME ZONE 'Asia/Seoul') - interval '9 hours' + interval '1 day'
+> ```
+> `Asia/Seoul` 은 고정 UTC+9·DST 없음(`pg_timezone_names`: `utc_offset 09:00`, `is_dst false`)이라
+> `+9h` 산술과 `AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul'` 은 **같은 값**이다(실측 확인).
+> 컬럼을 함수로 감싸면 `Lessons_mentorId_isMock_status_startAt_idx` 를 못 써서
+> Bitmap Index Scan 6.85ms → Parallel Seq Scan 27ms 로 느려진다(EXPLAIN ANALYZE 실측).
+>
+> ⚠ 수동 테스트 주의: `(startAt AT TIME ZONE 'Asia/Seoul')::date` 류는 **클라이언트 세션 TimeZone 에 따라
+> 결과가 달라진다.** psql(UTC)과 GUI(Asia/Seoul)에서 다른 행이 나오므로 검증 근거로 쓸 수 없다.
 
 ---
 

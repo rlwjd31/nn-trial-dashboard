@@ -31,7 +31,7 @@ paths:
       summary: 오늘의 trial 목록
       description: >
         KST 기준 오늘 예정된 trial 전체. 상단 KPI 카드는 이 응답을 프론트에서 집계한다
-        (별도 집계 API 없음). 프록시 대상 n8n `GET /webhook/trials/today`.
+        (별도 집계 API 없음). 프록시 대상 n8n `GET /webhook/trials` (동적 값이 없어 webhookId 없음).
       responses:
         "200":
           description: 오늘 trial 목록
@@ -51,7 +51,7 @@ paths:
       tags: [trials]
       operationId: getTrialDetail
       summary: 단건 trial 상세
-      description: 프록시 대상 n8n `GET /webhook/trials/detail?trial_id={id}`.
+      description: 프록시 대상 n8n `GET /webhook/<hookId>/trials/{id}`.
       parameters:
         - name: id
           in: path
@@ -75,15 +75,22 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ApiError" }
 
-  /trials/pre-trial-call-check:
+  /trials/{id}/pre-trial-call-check:
     patch:
       tags: [trials]
       operationId: savePreTrialCall
       summary: pre-trial call 진행 저장
       description: >
         pre-trial call(1·2·3차) 단건 진행 여부 저장. 프론트는 optimistic update 후 이 요청을 보낸다.
-        프록시 대상 n8n `PATCH /webhook/trials/pre-trial-call-check`. 저장처는
-        `automation.trial_dashboard_state.pre_trial_call_checks[stage]` (ddl.sql).
+        **trial_id 는 경로 파라미터다 — body 에 넣지 않는다.**
+        프록시 대상 n8n `PATCH /webhook/<hookId>/trials/{id}/pre-trial-call-check` (body 동일).
+        저장처는 `automation.trial_dashboard_state.pre_trial_call_checks[stage]` (ddl.sql).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: trial_id (= Lessons.id)
+          schema: { type: string, example: "48213" }
       requestBody:
         required: true
         content:
@@ -91,12 +98,12 @@ paths:
             schema: { $ref: "#/components/schemas/PreTrialCallCheckRequest" }
       responses:
         "200":
-          description: 저장 결과 에코
+          description: 저장 결과 에코 (trial_id 는 경로에서 받은 값을 그대로 돌려준다)
           content:
             application/json:
               schema: { $ref: "#/components/schemas/PreTrialCallCheckResponse" }
         "400":
-          description: 잘못된 body (trial_id/stage/checked)
+          description: 잘못된 body (stage/checked)
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ApiError" }
@@ -106,15 +113,23 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ApiError" }
 
-  /trials/note:
+  /trials/{id}/note:
     patch:
       tags: [trials]
       operationId: saveNote
       summary: 학생 추가정보(세일즈 메모) 저장
       description: >
         trial 학생에 대한 자유서술 추가정보 저장. 빈 문자열이면 기록 삭제로 취급.
-        프론트는 상세 캐시에 optimistic update. 프록시 대상 n8n `PATCH /webhook/trials/note`.
+        프론트는 상세 캐시에 optimistic update.
+        **trial_id 는 경로 파라미터다 — body 에 넣지 않는다.**
+        프록시 대상 n8n `PATCH /webhook/<hookId>/trials/{id}/note` (body 동일).
         저장처 `automation.trial_dashboard_state.sales_note` (ddl.sql).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: trial_id (= Lessons.id)
+          schema: { type: string, example: "48213" }
       requestBody:
         required: true
         content:
@@ -122,12 +137,12 @@ paths:
             schema: { $ref: "#/components/schemas/NoteRequest" }
       responses:
         "200":
-          description: 저장 결과 에코
+          description: 저장 결과 에코 (trial_id 는 경로에서 받은 값을 그대로 돌려준다)
           content:
             application/json:
               schema: { $ref: "#/components/schemas/NoteResponse" }
         "400":
-          description: 잘못된 body (trial_id/note)
+          description: 잘못된 body (note)
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ApiError" }
@@ -177,8 +192,8 @@ components:
           format: date-time
           description: >
             ISO8601, KST offset 포함. 원천 `Lessons.startAt` 은 timestamp **without** time zone 이며
-            값은 UTC 로 저장돼 있다 → KST 변환은 `startAt AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul'`
-            (data-layer.md 참조).
+            값은 UTC 로 저장돼 있다(2026-07-25 timestamptz 컬럼 31,567행 대조로 확정) →
+            KST 변환은 `startAt + interval '9 hours'` (data-layer.md 참조).
           example: "2026-07-25T18:00:00+09:00"
         student_id: { type: string, example: "10432" }
         student_name:
@@ -258,9 +273,9 @@ components:
 
     PreTrialCallCheckRequest:
       type: object
-      required: [trial_id, stage, checked]
+      description: trial_id 는 경로 파라미터이므로 body 에 없다.
+      required: [stage, checked]
       properties:
-        trial_id: { type: string }
         stage: { type: integer, enum: [1, 2, 3] }
         checked: { type: boolean }
 
@@ -275,9 +290,9 @@ components:
 
     NoteRequest:
       type: object
-      required: [trial_id, note]
+      description: trial_id 는 경로 파라미터이므로 body 에 없다.
+      required: [note]
       properties:
-        trial_id: { type: string }
         note:
           type: string
           description: 자유서술 메모. 빈 문자열이면 기록 삭제.

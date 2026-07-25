@@ -61,12 +61,17 @@ Route Handler 가 유일한 서버 경계다. `N8N_BASE_URL`/`N8N_API_TOKEN` 은
 안에서만 읽고 `x-api-key` 를 부착한다. 모든 응답 `no-store`.
 
 ## 엔드포인트 4개
-| 프론트 | n8n | 메서드 |
-|---|---|---|
-| `/api/trials` | `/webhook/trials/today` | GET |
-| `/api/trials/{id}` | `/webhook/trials/detail?trial_id=` | GET |
-| `/api/trials/pre-trial-call-check` | `/webhook/trials/pre-trial-call-check` | PATCH |
-| `/api/trials/note` | `/webhook/trials/note` | PATCH |
+| 프론트 | n8n | 메서드 | body |
+|---|---|---|---|
+| `/api/trials` | `/webhook/trials` | GET | — |
+| `/api/trials/{id}` | `/webhook/<hookId>/trials/<id>` | GET | — |
+| `/api/trials/{id}/pre-trial-call-check` | `/webhook/<hookId>/trials/<id>/pre-trial-call-check` | PATCH | `{stage, checked}` |
+| `/api/trials/{id}/note` | `/webhook/<hookId>/trials/<id>/note` | PATCH | `{note}` |
+
+**`trial_id` 는 경로에만 있다 — 요청 body 에 없다**(양쪽 모두). 응답에는 에코로 들어온다.
+`<hookId>` = **엔드포인트마다 다른** n8n Webhook 노드의 `webhookId`(UUID). 경로에 동적 값(`:trial_id`)이
+있으면 n8n 이 이 UUID 를 경로 앞에 강제로 붙인다 → `src/lib/n8n.ts` 의 `n8nPaths` 가 `N8N_WEBHOOK_ID_*`
+env 3개로 주입받아 흡수한다. **목록만 동적 값이 없어 UUID 가 붙지 않는다**(n8n UI 실측).
 
 ## mock 폴백
 모든 Route Handler 는 `const USE_MOCK = !process.env.N8N_BASE_URL` 로 분기해
@@ -107,14 +112,21 @@ mock 응답 모양은 계약과 일치해야 한다(`pnpm test:contract` 가 이
 
 # 라이브 검증 사실 (2026-07-25)
 
-- `automation` 스키마 존재 O, **`automation.trial_dashboard_state` 존재 X** → n8n 4 엔드포인트 전부 500
-  (`relation "automation.trial_dashboard_state" does not exist`). `ddl.sql` 실행이 유일한 해제 조건.
+- `automation.trial_dashboard_state` **생성 완료**(2026-07-26 실행 1181101 로 확인 — 이 테이블을
+  LEFT JOIN 하는 목록 쿼리가 에러 없이 실제 행을 반환). 이전의 "존재 X → 4 엔드포인트 전부 500" 은 해소됐다.
+  ⚠ FK 는 없다(`ddl.sql` 참고) → 존재하지 않는 `trial_id` 를 DB 가 막지 않으므로 쓰기 쿼리가 직접 막는다.
 - 워크플로우 **미발행**: `active: false`, `activeVersionId: null` → production webhook URL 서빙 안 됨. 인증도 `none`.
-- **타임존 버그(테이블과 무관)**: `Lessons.startAt` 은 `timestamp without time zone` + **UTC 저장**
-  (`max(createdAt)` ≈ `now()` UTC 로 확인). 배포 쿼리의 `startAt AT TIME ZONE 'Asia/Seoul'` 은 naive 값을
-  서울 시각으로 *해석*해 9시간을 빼고 거기에 `+09:00` 을 붙인다 → 표시 시각 **18시간 오차**,
-  오늘 필터 창도 밀려 KST 00:00–17:59 시작 trial 이 누락된다.
-  올바른 식: `startAt AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul'` (detail 의 `trial_date` 도 동일).
+- **타임존 (2026-07-25 수정 완료·배포됨)**: `Lessons.startAt` 은 `timestamp without time zone` 인데
+  **값은 UTC** 다. 확정 근거(추론 아님): 타임존 명시 컬럼과 31,567행 대조 —
+  `automation.paid_class_reminder_log.class_start_at` 28,784/28,791 일치,
+  `automation.phase1_lifecycle.trial_scheduled_at` 2,776/2,776 일치, **KST 가정은 양쪽 0건**.
+  보조 근거: trial 시작 시각 분포가 naive+9h 에서 15–21시 KST 로 몰린다(naive 그대로면 저녁이 텅 빔).
+  naive 값에 `AT TIME ZONE 'Asia/Seoul'` 을 바로 걸면 공식 문서대로 "이 값이 서울 시각"이라 **가정**해
+  9시간을 빼므로 **18시간 오차**가 났다. 수정 후 규칙은 하나다: **naive(UTC) + 9h = KST 벽시계.**
+  오늘 창은 반열린 구간 `[KST 오늘 00:00, 내일 00:00)` 을 naive-UTC 로 표현해 `startAt` 인덱스를 살린다
+  (`Lessons_mentorId_isMock_status_startAt_idx` 사용, Bitmap Index Scan 6.85ms vs 컬럼을 감쌀 때 Seq Scan 27ms).
+  ⚠ `(startAt AT TIME ZONE 'Asia/Seoul')::date` 류는 **클라이언트 세션 TimeZone 에 따라 결과가 달라진다** —
+  psql(UTC)과 GUI(Asia/Seoul)에서 다른 행이 나오므로 수동 테스트 근거로 쓰지 말 것.
 - distinct 실측: `Mentors.tier` = `elite, normal`(**`basic` 없음**) · `Mentors.gender` = `female, male, nonbinary` ·
   trial 의 `Lessons.status` = `approved, canceled, completed, paid`(`scheduled` 는 trial 행에 없음).
 - 그 외: 학생 이름은 `Students.firstName+lastName` → 없으면 `koreanEquivalent` · `CallQueues.studentId` 로 조인 ·

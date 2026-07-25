@@ -60,7 +60,7 @@
 
 - **집계 전용 API 없음** (카드는 목록으로 계산) → endpoint 4개면 충분.
 - 각 `/api/*` 는 서버 Route Handler가 n8n `/webhook/*` 로 1:1 프록시(x-api-key 부착, `no-store`). 매핑:
-  `/api/trials`→`/webhook/trials/today`, `/api/trials/{id}`→`/webhook/trials/detail?trial_id=`,
+  `/api/trials`→`/webhook/trials`, `/api/trials/{id}`→`/webhook/<hookId>/trials/<id>`,
   `/api/trials/precheck`→`/webhook/trials/precheck`, `/api/trials/note`→`/webhook/trials/note`.
 
 ---
