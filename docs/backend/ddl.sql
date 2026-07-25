@@ -7,11 +7,12 @@
 CREATE TABLE IF NOT EXISTS automation.trial_dashboard_state (
     lesson_id        INTEGER PRIMARY KEY
                      REFERENCES public."Lessons"(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    pre_trial_call_checks  BOOLEAN[] NOT NULL DEFAULT ARRAY[false, false, false],  -- [1차,2차,3차] pre-trial call 진행
-    sales_note       TEXT,                                                   -- 학생 관련 추가정보 / 세일즈 메모
-    updated_by       INTEGER REFERENCES public."Users"(id),
-    updated_at       TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    pre_trial_call_checks  BOOLEAN[] NOT NULL DEFAULT ARRAY[false, false, false],  -- [1차,2차,3차] pre-trial call check
+    sales_note             TEXT,                                            -- 학생 관련 추가정보 / 세일즈 메모
+    updated_at             TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+-- 작성자(누가) 추적 안 함: sales rep 2명 + 로그인 없음(토큰 1겹) → over-engineering 이므로 제외.
+-- 화면의 sales rep 표시는 trial 배정 rep(CallQueues 기준 sales_rep_name)로 이미 제공됨.
 
 -- lesson_id = Lessons.id(= trial_id). trial 1건당 1행.
 -- pre_trial_call_checks: 길이 3 boolean 배열. index 1..3 = n차 pre-trial call 완료 여부(Postgres 배열은 1-base).
