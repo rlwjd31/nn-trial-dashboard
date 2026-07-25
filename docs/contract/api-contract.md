@@ -7,7 +7,7 @@
 ## 읽는 법 (브랜치 교차 없이)
 프론트 세션(`~/workspace/naonow/trial-dashboard`, main)에서 아래 중 하나로 읽는다. **git 브랜치 전환 불필요**:
 - 워크트리 폴더 직접 열기: `../trial-dashboard-backend/docs/backend/` (디스크에 실재하는 별도 폴더)
-- 또는 `git show backend:docs/backend/openapi.yaml` / `git show backend:docs/backend/frontend-handoff.md`
+- 또는 `git show backend:docs/contract/openapi.yaml` / `git show backend:docs/contract/api-contract.md`
 
 ## 계약 (현재 배포된 n8n 기준)
 브라우저 호출 엔드포인트(프론트 자기 도메인 `/api/*` → n8n `/webhook/*` 프록시). 상세 스키마는 openapi.yaml.

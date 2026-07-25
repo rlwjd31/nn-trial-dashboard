@@ -6,12 +6,12 @@
 > ⚠ 프로덕션 DB 대상 DDL/쿼리이므로 **실행 전 소유자(Denise/DB) 확인**이 필요한 항목은 `VERIFY`/`DECISION`으로 표시.
 >
 > **현재 단계 = 문서/설계만.** n8n 워크플로우 구축·라이브 DB 조회·프로덕션 DDL 실행은 하지 않는다.
-> 관련 문서: 프론트 데이터 요구 [frontend-data-needs.md](./frontend-data-needs.md), API 명세 [openapi.yaml](./openapi.yaml).
+> 관련 문서: 프론트 데이터 요구 [frontend-data-needs.md](../contract/frontend-data-needs.md), API 명세 [openapi.yaml](../contract/openapi.yaml).
 > **확정**: precheck 횟수 + 학생 추가정보는 **trial-sales 전용 기능 영역** → 신규 테이블 DDL 을 기능 요구 기준으로 둔다(아래 §2).
 >
 > ⚠ **최종 반영(이 문서의 §2·§3 인라인 SQL보다 우선)** — 배포본은 아래 파일이 SoT다.
 > - 테이블: **`automation.trial_dashboard_state`** (snake_case). 컬럼 `lesson_id, pre_trial_call_checks (boolean[3]), sales_note, updated_at`. 작성자 추적(`updated_by`)은 제외(로그인 없음·rep 2명 → over-engineering). DDL: [ddl.sql](./ddl.sql).
-> - 워크플로우 쿼리(배포본 동기): [n8n-trials-api.workflow.ts](./n8n-trials-api.workflow.ts). public 원천 테이블은 `public."Lessons"` 처럼 스키마 수식.
+> - 워크플로우 쿼리(배포본 동기): [workflow.ts](./workflow.ts). public 원천 테이블은 `public."Lessons"` 처럼 스키마 수식.
 > - **스코프 축소**: `pre_call_done` / `post_call_done` 제거(구현 불요) → 목록 응답·KPI에서 빠짐. 프론트 StatCards의 두 타일도 제거 대상.
 > - 배포 워크플로우: "[Trial API] - Main" (id `OHSTgJsHd6337qgf`).
 
@@ -228,7 +228,7 @@ RETURNING d."lessonId"::text AS trial_id, d."salesNote" AS note;
 - **V3 잔여**: `Users` 에 이름 컬럼 없음 → sales_rep_name 은 email local-part 로 임시 대체.
 - 오늘 trial 57건 관측(쿼리 정상).
 
-최종 워크플로우 SDK: [n8n-trials-api.workflow.ts](./n8n-trials-api.workflow.ts) (validate 통과, node 15).
+최종 워크플로우 SDK: [workflow.ts](./workflow.ts) (validate 통과, node 15).
 
 ---
 

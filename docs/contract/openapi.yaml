@@ -10,7 +10,7 @@ info:
     - 인증: 브라우저-서버 구간은 same-origin(추가 헤더 없음). 서버-n8n 구간만 `x-api-key`
       (서버 전용 env `N8N_API_TOKEN`, 브라우저 비노출).
     - 캐시: 모든 응답 `Cache-Control: no-store`.
-    - 데이터 출처/쿼리: docs/backend/trials-data-layer.md. 필드 실사용: docs/backend/frontend-data-needs.md.
+    - 데이터 출처/쿼리: docs/backend/data-layer.md. 필드 실사용: docs/contract/frontend-data-needs.md.
     - ⚠ 데이터 계약 일부 미확정(PRD §9): status enum, Mentors 스키마, sales_rep 이름 소스.
 
 servers:

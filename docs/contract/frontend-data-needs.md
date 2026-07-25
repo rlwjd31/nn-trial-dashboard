@@ -3,7 +3,7 @@
 > 목적: **프론트가 실제로 소비하는 데이터를 100% 열거**하고, 그로부터 필요한 API
 > endpoint와 각 필드의 출처를 역산한다. (계약을 UI 실사용에서 도출 — 추측 금지)
 > 근거: `src/features/trials/**` 컴포넌트·훅·집계 코드 실측 (backend 브랜치 기준).
-> 데이터 출처/쿼리는 [trials-data-layer.md](./trials-data-layer.md), 명세는 [openapi.yaml](./openapi.yaml).
+> 데이터 출처/쿼리는 [data-layer.md](../backend/data-layer.md), 명세는 [openapi.yaml](./openapi.yaml).
 
 ---
 
