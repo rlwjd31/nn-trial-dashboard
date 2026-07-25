@@ -76,7 +76,8 @@ const SEED: TrialSeed[] = [
     student_first_name: "Hyeong Chang",
     student_last_name: "Lim",
     student_email: "hyeonchang2002@gmail.com",
-    student_phone_number: "+82 10-9469-4696",
+    // 실제 번호(국내 표기) — toE164 로 +821051835277 로 정규화된다
+    student_phone_number: "01051835277",
     mentor_id: "512",
     mentor_name: "Emma Wilson",
     mentor_tier: "elite",

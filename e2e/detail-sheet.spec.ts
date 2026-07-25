@@ -15,11 +15,11 @@ test.describe("상세 시트", () => {
 
   test("CloudTalk 버튼이 E.164 ct+tel 링크를 만든다", async ({ page }) => {
     await gotoDashboard(page);
-    await openDetail(page, "20443"); // +82 10-9469-4696
+    await openDetail(page, "20443"); // 01051835277 (국내 표기)
     const call = page.locator('a[href^="ct+tel:"]');
     await expect(call).toHaveAttribute(
       "href",
-      "ct+tel:%2B821094694696?from=%2B82234986970",
+      "ct+tel:%2B821051835277?from=%2B82234986970",
     );
   });
 
