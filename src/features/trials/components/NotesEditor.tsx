@@ -10,8 +10,10 @@ const Editor = dynamic(() => import("./InitializedMDXEditor"), { ssr: false });
 /**
  * 타이핑이 멈춘 뒤 저장까지 기다리는 시간.
  * MDXEditor 의 onChange 는 스로틀되지 않아(키 입력마다 발생) 디바운스가 필수다.
+ * 저장 1회 = n8n 워크플로우 실행 1건이므로 짧게 두지 않는다 —
+ * 통화 중 끊어 쓰는 패턴에서 "멈춤마다 저장"이 수십 건씩 쌓인다.
  */
-const SAVE_DEBOUNCE_MS = 700;
+const SAVE_DEBOUNCE_MS = 3000;
 
 interface Props {
   trialId: string;
@@ -33,6 +35,8 @@ export function NotesEditor({ trialId, note }: Props) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // 디바운스 대기 중인(아직 저장 요청을 보내지 않은) 최신 본문
   const pendingRef = useRef<string | null>(null);
+  // 이미 서버로 보낸 본문 — 같은 내용을 다시 보내지 않기 위한 기준(dirty 체크)
+  const savedRef = useRef(note ?? "");
   // 언마운트 cleanup 에서 최신 mutate 를 읽기 위한 통로 (render 중에는 쓰지 않는다)
   const saveRef = useRef<((markdown: string) => void) | null>(null);
 
@@ -54,12 +58,28 @@ export function NotesEditor({ trialId, note }: Props) {
 
   function handleChange(markdown: string, initialMarkdownNormalize: boolean) {
     // 초기 마크다운 정규화로 인한 onChange → 사용자 입력이 아니므로 저장하지 않는다.
-    if (initialMarkdownNormalize) return;
-    pendingRef.current = markdown;
+    // 대신 dirty 비교 기준을 이 정규화된 본문으로 맞춘다. 에디터의 직렬화 결과는
+    // 원본과 공백·불릿 기호가 다를 수 있어, 원본을 기준으로 두면 "쓴 것을 되돌려도
+    // 다르다"고 판정되어 불필요한 저장이 나간다.
+    if (initialMarkdownNormalize) {
+      savedRef.current = markdown;
+      return;
+    }
+
     if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = null;
+
+    // 이미 보낸 본문과 같아졌으면(예: 한 글자 썼다가 지움) 보낼 것이 없다.
+    if (markdown === savedRef.current) {
+      pendingRef.current = null;
+      return;
+    }
+
+    pendingRef.current = markdown;
     timerRef.current = setTimeout(() => {
       timerRef.current = null;
       pendingRef.current = null;
+      savedRef.current = markdown;
       saveRef.current?.(markdown);
     }, SAVE_DEBOUNCE_MS);
   }

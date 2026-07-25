@@ -66,6 +66,27 @@ test.describe("PTC 콜 메모 (MDXEditor WYSIWYG)", () => {
     await expect(page.locator(".ptc-notes strong")).toHaveText("높음");
   });
 
+  test("되돌린 편집은 저장 요청을 보내지 않는다 (dirty 체크)", async ({ page }) => {
+    const patches: string[] = [];
+    page.on("request", (req) => {
+      if (isNotePatch(req)) patches.push(req.url());
+    });
+
+    await gotoDashboard(page);
+    await openDetail(page, "10769"); // sales_note 시드 있음
+
+    const editor = page.locator('.ptc-notes [contenteditable="true"]');
+    await editor.click();
+    await page.keyboard.press("End");
+    await page.keyboard.type("가");
+    await page.keyboard.press("Backspace"); // 디바운스 안에 원래 내용으로 복귀
+
+    // 디바운스가 지나도 요청이 없어야 한다.
+    // (비교 기준은 에디터가 정규화한 초기 본문 — 원본 문자열로 비교하면 여기서 새어 나간다)
+    await page.waitForTimeout(4000);
+    expect(patches).toHaveLength(0);
+  });
+
   test("메모가 서버(sales_note)에 자동 저장되고 새로고침 후에도 남는다", async ({
     page,
   }) => {
