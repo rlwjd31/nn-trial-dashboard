@@ -45,3 +45,9 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /blob-report/
+
+# nested worktrees (도메인 브랜치) — main 트리에 빨려 들어가지 않도록.
+# 이 두 폴더는 git worktree 다 (`git worktree list`). 절대 `git add` 하지 말 것.
+# ⚠ main 에서 `git clean -fdx` 를 실행하면 ignored 인 이 둘이 삭제된다 — 실행 금지.
+/frontend/
+/backend/
