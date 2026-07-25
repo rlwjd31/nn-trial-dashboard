@@ -34,7 +34,7 @@ export async function fetchTrialDetail(trialId: string): Promise<TrialDetail> {
   return toJson<TrialDetail>(res);
 }
 
-// 쓰기는 trial_id 를 **경로**로 보낸다 (body 에는 넣지 않는다 — 계약 §REST 화).
+// 쓰기 2개는 trial_id 를 **경로**로 보낸다 (body 에는 넣지 않는다 — 계약 §REST 화).
 export async function savePreTrialCallCheck(
   trialId: string,
   input: PreTrialCallCheckRequest,

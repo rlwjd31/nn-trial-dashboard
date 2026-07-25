@@ -3,7 +3,6 @@ import { callN8n, n8nPaths } from "@/lib/n8n";
 
 export const dynamic = "force-dynamic";
 
-
 // GET /api/trials/[id]  ->  n8n GET /webhook/{hookId}/trials/<id>
 export async function GET(
   _req: Request,

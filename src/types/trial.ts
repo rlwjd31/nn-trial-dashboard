@@ -16,16 +16,16 @@ export type TrialStatus = "approved" | "canceled" | "completed" | "paid";
 /** GET /webhook/trials 의 trials[] 원소 (= /api/trials) */
 export interface TrialListItem {
   trial_id: string;
-  /** ISO8601, KST 오프셋 포함. 예: "2026-07-24T14:00:00+09:00" */
+  /** ISO8601, KST 오프셋 포함. 예: "2026-07-25T18:00:00+09:00" */
   trial_time: string;
   student_id: string;
-  /** 표시용 학생 이름 (Students.firstName + lastName 조합) */
+  /** 표시용 학생 이름 (firstName+lastName, 없으면 koreanEquivalent) */
   student_name: string;
   student_email: string;
   student_phone_number: string;
   mentor_name: string;
   mentor_tier: MentorTier;
-  /** 이 trial을 담당하는 Sales rep 이름 (CallQueues.claimedByAdminId/autoAssignedToId → Users(admin)) */
+  /** 이 trial을 담당하는 Sales rep 표시명 (CallQueues 담당 admin) */
   sales_rep_name: string;
   status: TrialStatus;
   /** [1차, 2차, 3차] pre-trial call 진행 여부. 항상 길이 3 */
@@ -42,10 +42,11 @@ export interface TrialsTodayResponse {
 export interface TrialDetail {
   trial_id: string;
   student_id: string;
-  /** 표시용 학생 이름 (Students.firstName + lastName 조합) */
+  /** 표시용 학생 이름 (firstName+lastName, 없으면 koreanEquivalent) */
   student_name: string;
   student_email: string;
   student_phone_number: string;
+  /** Students.level(+langLevel) 조합. 예: "3 · Beginner-High" */
   level: string;
   mentor_id: string;
   mentor_name: string;

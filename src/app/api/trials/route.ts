@@ -4,7 +4,6 @@ import { callN8n, n8nPaths } from "@/lib/n8n";
 // 목록 GET 은 캐시하지 않음 (PRD 섹션 5).
 export const dynamic = "force-dynamic";
 
-
 // GET /api/trials  ->  n8n GET /webhook/trials
 export async function GET() {
   try {
