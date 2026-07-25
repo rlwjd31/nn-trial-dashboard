@@ -3,13 +3,14 @@
 -- 네이밍: automation 스키마의 고전적 컨벤션 = snake_case (예: automation.new_user_fomo_outbox).
 -- ⚠ DB 소유자가 직접 실행. n8n Trials API 워크플로우는 이 테이블이 존재한다고 가정한다.
 -- 멱등(IF NOT EXISTS): 기존 테이블·데이터에 영향 없음.
+-- date 타입: 이 automation 테이블만 timestamptz(멀티 타임존). public 스키마는 select만, 절대 변경 안 함.
 
 CREATE TABLE IF NOT EXISTS automation.trial_dashboard_state (
     lesson_id        INTEGER PRIMARY KEY
                      REFERENCES public."Lessons"(id) ON UPDATE CASCADE ON DELETE CASCADE,
     pre_trial_call_checks  BOOLEAN[] NOT NULL DEFAULT ARRAY[false, false, false],  -- [1차,2차,3차] pre-trial call check
     sales_note             TEXT,                                            -- 학생 관련 추가정보 / 세일즈 메모
-    updated_at             TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at             TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP  -- 멀티 타임존: with time zone
 );
 -- 작성자(누가) 추적 안 함: sales rep 2명 + 로그인 없음(토큰 1겹) → over-engineering 이므로 제외.
 -- 화면의 sales rep 표시는 trial 배정 rep(CallQueues 기준 sales_rep_name)로 이미 제공됨.
