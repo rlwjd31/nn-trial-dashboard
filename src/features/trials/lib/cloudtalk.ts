@@ -1,4 +1,4 @@
-// CloudTalk 클릭 발신(ct+tel:) 유틸. 스펙: docs/cloudtalk-call-button.md
+// CloudTalk 클릭 발신(ct+tel:) 유틸. 스펙: ../docs/cloudtalk-call-button.md
 //
 // - ct+tel: 은 E.164 형식만 안전하게 동작(+국가코드, 공백/하이픈 없음) → toE164 필수.
 // - 발신(from) 번호는 env(NEXT_PUBLIC_CLOUDTALK_FROM). 브라우저에서 링크를 만들므로

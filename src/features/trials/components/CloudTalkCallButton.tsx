@@ -14,7 +14,7 @@ interface Props {
 
 /**
  * CloudTalk 클릭 발신 버튼. 클릭 시 ct+tel: 딥링크로 CloudTalk 데스크톱 앱 발신.
- * 스펙: docs/cloudtalk-call-button.md
+ * 스펙: ../docs/cloudtalk-call-button.md
  */
 export function CloudTalkCallButton({
   targetNumber,

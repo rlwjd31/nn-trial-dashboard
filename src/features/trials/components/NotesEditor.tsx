@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
-// MDXEditor 는 클라 전용 → dynamic(ssr:false). 스펙: docs/ptc-call-notes.md
+// MDXEditor 는 클라 전용 → dynamic(ssr:false). 스펙: ../docs/ptc-call-notes.md
 const Editor = dynamic(() => import("./InitializedMDXEditor"), { ssr: false });
 
 interface Props {
@@ -14,7 +14,7 @@ interface Props {
 /**
  * PTC 콜 메모 — 마크다운을 입력하는 즉시 그 자리에서 렌더(WYSIWYG).
  * TODO: 현재 저장은 trial별 localStorage 임시 방식. 확정 후 n8n
- *       CallQueueNotes(type='sales') 엔드포인트로 교체(docs/ptc-call-notes.md §4).
+ *       CallQueueNotes(type='sales') 엔드포인트로 교체(../docs/ptc-call-notes.md §4).
  */
 export function NotesEditor({ trialId }: Props) {
   const storageKey = trialId ? `ptc-note:${trialId}` : null;
