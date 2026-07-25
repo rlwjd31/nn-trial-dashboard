@@ -39,7 +39,7 @@ export interface TrialsTodayResponse {
   trials: TrialListItem[];
 }
 
-/** GET /webhook/trials/detail?trial_id=<id> (= /api/trials/[id]) */
+/** GET /webhook/{hookId}/trials/{id} (= /api/trials/[id]) */
 export interface TrialDetail {
   trial_id: string;
   student_id: string;
@@ -50,11 +50,11 @@ export interface TrialDetail {
   level: string;
   mentor_id: string;
   mentor_name: string;
-  mentor_gender: string;
+  mentor_gender: MentorGender;
+  /** CallQueues.answersJson.interests */
   interests: string[];
-  /** ISO8601 date. 예: "2026-07-24" */
+  /** ISO8601 date (KST 기준). 예: "2026-07-25" */
   trial_date: string;
-  call_queue_url: string;
   /** 학생 추가정보(세일즈 메모) 마크다운 원문. 미기록이면 null */
   sales_note: string | null;
 }

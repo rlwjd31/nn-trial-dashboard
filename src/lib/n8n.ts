@@ -17,11 +17,16 @@ function requireEnv(name: string): string {
  *
  * n8n Webhook 노드는 경로에 동적 값(`:trial_id`)이 있으면 **노드별 `webhookId`(UUID)를 경로 앞에
  * 강제로 붙인다.** 반대로 동적 값이 없는 경로는 UUID 없이 그대로 서빙된다 → 목록만 예외다.
+ * 그래서 엔드포인트마다 UUID env(`N8N_WEBHOOK_ID_*`)를 따로 주입받는다.
  * (계약: ../backend/docs/contract/api-contract.md — 배경: ../docs/learning/007-platform-owns-the-url.md)
  */
 export const n8nPaths = {
   /** GET 목록 — 동적 값이 없어 webhookId 가 붙지 않는다 */
   trials: () => "/webhook/trials",
+
+  /** GET 상세 */
+  trialDetail: (trialId: string) =>
+    `/webhook/${requireEnv("N8N_WEBHOOK_ID_TRIAL_DETAIL")}/trials/${encodeURIComponent(trialId)}`,
 };
 
 /**
