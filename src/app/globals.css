@@ -48,6 +48,7 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 
   /* Glassmorphism surfaces — see docs/design.md §3.2 */
+  --color-skeleton: var(--skeleton);
   --color-glass: var(--glass);
   --color-glass-strong: var(--glass-strong);
   --color-glass-edge: var(--glass-edge);
@@ -91,6 +92,8 @@
   --sidebar-ring: oklch(0.708 0 0);
 
   /* Glass (light — MVP 비목표, 대비용 최소값) */
+  /* 로딩 placeholder — 유리 표면 위에 얹히므로 불투명 회색이 아니라 반투명이다. */
+  --skeleton: oklch(0.145 0 0 / 8%);
   --glass: oklch(1 0 0 / 55%);
   --glass-strong: oklch(1 0 0 / 72%);
   --glass-edge: oklch(0.145 0 0 / 8%);
@@ -135,6 +138,9 @@
 
   /* Glass (dark — 기본 테마, PRD §6.0) : 컬러 배경 위 프로스티드 유리 필름.
      유리가 "보이려면" ① 표면 alpha가 충분하고 ② 뒤에 선명한 색이 있어야 한다. */
+  /* 로딩 placeholder: 흰색 반투명. --glass(10%)·--glass-strong(16%) 표면 위에서
+     확실히 읽히되 실제 콘텐츠로 오인되지 않는 지점(실측 비교로 22% 선택). */
+  --skeleton: oklch(1 0 0 / 22%);
   --glass: oklch(1 0 0 / 10%);
   --glass-strong: oklch(1 0 0 / 16%);
   --glass-edge: oklch(1 0 0 / 28%);
