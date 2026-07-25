@@ -17,6 +17,19 @@
 - **명시적 비목표**: 로그인 시스템, 실시간 동기화(웹소켓/폴링), 페이지네이션, 정렬/필터/검색 UI, 모바일 최적화 → 구현하지 않는다 (over-engineering 방지).
 - **데이터 계약**: 실제 DB 스키마는 미확정. PRD §9 항목은 구현 전 확인이 필요하다.
 
+# Domains & Contract (front / back 공유)
+
+이 저장소는 두 도메인으로 나뉜다. 작업 전 자기 도메인 가이드를 읽고, 경계는 계약을 따른다.
+
+- **공유 계약(boundary)**: [docs/contract/openapi.yaml](docs/contract/openapi.yaml) = API 모양의 단일 진실 공급원(SoT).
+  변경 프로토콜·프론트 핸드오프: [docs/contract/api-contract.md](docs/contract/api-contract.md).
+  응답/요청 모양을 바꿀 땐 **openapi 를 먼저** 고치고 front·back 이 각자 수렴한다.
+- **프론트 도메인**: UI(`src/features`, `src/components`) + 프록시(`src/app/api`).
+  가이드 = [docs/design.md](docs/design.md)(디자인·설계) + [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)(폴더 구조).
+- **백엔드 도메인**: n8n 워크플로우 + DB(별도 repo `../n8n-workflows`). 가이드 = [docs/backend/guide.md](docs/backend/guide.md).
+  배포 SoT = n8n 클라우드 워크플로우. **DDL·DB 변경은 DB 소유자**가 한다(`public` 스키마는 읽기 전용).
+- **규칙**: 프론트는 `src/**` 만, 백엔드는 n8n/DB 만 건드린다. **엔드포인트·응답 모양의 최신 정의는 위 계약(openapi)이 우선**한다(아래 Product Spec 요약이 계약과 다르면 계약이 SoT).
+
 # Commit Convention
 
 이 저장소의 모든 commit 메시지는 반드시 아래 형태를 따른다.
