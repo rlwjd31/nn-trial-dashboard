@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
 import { callN8n } from "@/lib/n8n";
-import { setMockNote } from "@/features/trials/mock/trials.mock";
 import type { NoteRequest } from "@/types/trial";
 
 export const dynamic = "force-dynamic";
 
-const USE_MOCK = !process.env.N8N_BASE_URL;
 
 // PATCH /api/trials/note  ->  n8n PATCH /webhook/trials/note
 // 저장처: automation.trial_dashboard_state.sales_note (계약 openapi.yaml §/trials/note)
@@ -23,17 +21,6 @@ export async function PATCH(req: Request) {
     return NextResponse.json(
       { error: "Body must be { trial_id: string, note: string }" },
       { status: 400 },
-    );
-  }
-
-  if (USE_MOCK) {
-    const ok = setMockNote(trial_id, note);
-    if (!ok) {
-      return NextResponse.json({ error: "Trial not found" }, { status: 404 });
-    }
-    return NextResponse.json(
-      { ok: true, trial_id, note },
-      { headers: { "cache-control": "no-store" } },
     );
   }
 

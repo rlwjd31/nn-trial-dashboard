@@ -14,7 +14,7 @@ function requireEnv(name: string): string {
 
 /**
  * n8n Webhook 으로 프록시 요청을 보낸다.
- * - x-api-key 헤더 자동 부착
+ * - x-api-key 헤더는 N8N_API_TOKEN 이 있을 때만 부착
  * - path 는 "/webhook/..." 형태의 n8n 경로
  */
 export async function callN8n(
@@ -22,14 +22,16 @@ export async function callN8n(
   init?: RequestInit,
 ): Promise<Response> {
   const baseUrl = requireEnv("N8N_BASE_URL").replace(/\/+$/, "");
-  const token = requireEnv("N8N_API_TOKEN");
+  // Webhook 노드에 인증을 걸지 않은 상태에서도 호출돼야 하므로 토큰은 선택 사항이다.
+  // 값이 있으면 x-api-key 로 붙인다(n8n 쪽에 Header Auth 를 켜면 필수가 된다).
+  const token = process.env.N8N_API_TOKEN;
   const url = `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
 
   return fetch(url, {
     ...init,
     headers: {
       "content-type": "application/json",
-      "x-api-key": token,
+      ...(token ? { "x-api-key": token } : {}),
       ...(init?.headers ?? {}),
     },
     // 목록/상세/쓰기 모두 서버 캐시 미사용 (PRD 섹션 5).
