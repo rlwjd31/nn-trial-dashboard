@@ -21,6 +21,7 @@
 | 010 | [FK 가 없으면 존재 검증은 쿼리가 한다](./010-existence-check-without-fk.md) | 없는 부모로도 upsert 가 조용히 성공한다. `SELECT ... RETURNING` 의 0행을 신호로 쓴다 |
 | 011 | [계약이 침묵하면 구현마다 갈린다](./011-contract-silence-observable-behavior.md) | 스키마 검증기는 모양만 본다. 정렬은 적어야 검증 대상이 된다 |
 | 012 | [클릭이 "먹통"일 때 — debounce · throttle · in-flight 잠금](./012-debounce-throttle-inflight-lock.md) | 셋은 서로 다른 문제를 푼다. "느리다"의 원인은 타이머가 아니라 잠금인 경우가 많다 |
+| 013 | [조상이 만든 컨텍스트가 자식 CSS 를 무력화한다 — sticky · backdrop-filter](./013-ancestor-contexts-defeat-css.md) | 값을 키워도 안 된다. `overflow` 와 backdrop root 를 위로 훑어야 한다 |
 
 ## 노트 작성 규칙 (에이전트·사람 공통)
 
