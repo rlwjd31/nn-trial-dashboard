@@ -11,7 +11,7 @@ export type TrialStatus = "approved" | "canceled" | "completed" | "paid";
 /** [1차, 2차, 3차] pre-trial call 진행 여부. automation.trial_dashboard_state.pre_trial_call_checks */
 export type PreTrialCallChecks = [boolean, boolean, boolean];
 
-/** GET /webhook/trials/today 의 trials[] 원소 (= /api/trials) */
+/** GET /api/trials → n8n GET /webhook/trials 의 trials[] 원소 */
 export interface TrialListItem {
   trial_id: string;
   /** ISO8601, KST 오프셋 포함. 예: "2026-07-25T18:00:00+09:00" */
@@ -34,7 +34,7 @@ export interface TrialsTodayResponse {
   trials: TrialListItem[];
 }
 
-/** GET /webhook/trials/detail?trial_id=<id> (= /api/trials/[id]) */
+/** GET /api/trials/{id} → n8n GET /webhook/<hookId>/trials/<id> */
 export interface TrialDetail {
   trial_id: string;
   student_id: string;
@@ -59,9 +59,11 @@ export interface TrialDetail {
 /** pre-trial call 저장 단계 */
 export type PreTrialCallStage = 1 | 2 | 3;
 
-/** PATCH /webhook/trials/pre-trial-call-check body (= /api/trials/pre-trial-call-check) */
+/**
+ * PATCH /api/trials/{id}/pre-trial-call-check body.
+ * **trial_id 는 경로 파라미터다 — body 에 없다.**
+ */
 export interface PreTrialCallCheckRequest {
-  trial_id: string;
   stage: PreTrialCallStage;
   checked: boolean;
 }
@@ -73,9 +75,11 @@ export interface PreTrialCallCheckResponse {
   checked: boolean;
 }
 
-/** PATCH /webhook/trials/note body (= /api/trials/note) — 학생 추가정보 저장 */
+/**
+ * PATCH /api/trials/{id}/note body — 학생 추가정보 저장.
+ * **trial_id 는 경로 파라미터다 — body 에 없다.**
+ */
 export interface NoteRequest {
-  trial_id: string;
   /** 자유서술 메모. 빈 문자열이면 기록 삭제로 취급. */
   note: string;
 }

@@ -4,7 +4,9 @@
 //   pnpm test:contract -- --base http://localhost:3000/api
 //                                      # 실행 중인 Next Route Handler 를 대조
 //   pnpm test:contract -- --base https://<host>/webhook --n8n
-//                                      # n8n 웹훅을 직접 대조 (경로가 /trials/today 형태)
+//                                      # n8n 웹훅을 직접 대조. 목록은 /trials 지만
+//                                      # 나머지는 /<webhookId>/trials/<trial_id>/... 이므로
+//                                      # N8N_WEBHOOK_ID_* env 3개가 필요하다.
 //
 // 의존성 0개. Node 22+ 의 TypeScript strip 실행을 쓴다 (`node test/contract-check.ts`).
 // openapi.yaml 은 아래 minimal YAML 파서로 읽는다 — 스펙을 사본으로 복제하지 않기 위함이다.
@@ -423,13 +425,13 @@ async function fromMock() {
     { label: "GET /trials (mock)", spec: schemaFor("/trials", "get", "200"), body: today },
     { label: "GET /trials/{id} (mock)", spec: schemaFor("/trials/{id}", "get", "200"), body: detail },
     {
-      label: "PATCH /trials/pre-trial-call-check (mock)",
-      spec: schemaFor("/trials/pre-trial-call-check", "patch", "200"),
+      label: "PATCH /trials/{id}/pre-trial-call-check (mock)",
+      spec: schemaFor("/trials/{id}/pre-trial-call-check", "patch", "200"),
       body: { ok: true, trial_id: firstId, stage: 2, checked: true },
     },
     {
-      label: "PATCH /trials/note (mock)",
-      spec: schemaFor("/trials/note", "patch", "200"),
+      label: "PATCH /trials/{id}/note (mock)",
+      spec: schemaFor("/trials/{id}/note", "patch", "200"),
       body: { ok: true, trial_id: firstId, note: "contract-check 테스트 메모" },
     },
   ];
@@ -441,8 +443,22 @@ async function fromMock() {
  */
 async function fromLive(base: string, viaN8n: boolean) {
   const root = base.replace(/\/+$/, "");
-  const listPath = viaN8n ? "/trials/today" : "/trials";
   const cases: { label: string; spec: Schema; body: unknown }[] = [];
+
+  // n8n 직접 대조 모드에서는 엔드포인트마다 webhookId(UUID) 가 다르다.
+  // 경로에 동적 값(:trial_id)이 있으면 n8n 이 webhookId 를 경로 앞에 강제로 붙이기 때문이다.
+  function hookId(name: string): string {
+    const v = process.env[name];
+    if (!v) {
+      throw new Error(
+        `--n8n 모드는 env ${name} 가 필요하다 (n8n Webhook 노드의 Production URL 에서 UUID 를 읽어 .env.local 에 넣을 것)`,
+      );
+    }
+    return v;
+  }
+
+  // 목록은 n8n 쪽에도 동적 값이 없어 webhookId 가 붙지 않는다 → 양쪽 모두 "/trials".
+  const listPath = "/trials";
 
   async function json(path: string, init?: RequestInit) {
     const res = await fetch(`${root}${path}`, { ...init, cache: "no-store" });
@@ -476,9 +492,10 @@ async function fromLive(base: string, viaN8n: boolean) {
   }
 
   if (firstId) {
+    const encId = encodeURIComponent(firstId);
     const detailPath = viaN8n
-      ? `/trials/detail?trial_id=${encodeURIComponent(firstId)}`
-      : `/trials/${encodeURIComponent(firstId)}`;
+      ? `/${hookId("N8N_WEBHOOK_ID_TRIAL_DETAIL")}/trials/${encId}`
+      : `/trials/${encId}`;
     const detail = await attempt(`GET ${detailPath}`, () => json(detailPath));
     if (detail) {
       cases.push({
@@ -496,25 +513,32 @@ async function fromLive(base: string, viaN8n: boolean) {
       });
 
     // ⚠ 라이브 모드의 쓰기 검증은 실제 저장소(mock 메모리 또는 DB)를 건드린다.
-    const checkPath = "/trials/pre-trial-call-check";
+    // n8n 직접 모드는 trial_id 가 경로 파라미터라 body 에서 빠진다.
+    // 프론트 프록시와 n8n 이 같은 REST 모양이다 — 경로에 trial_id, body 는 값만.
+    const checkPath = viaN8n
+      ? `/${hookId("N8N_WEBHOOK_ID_PRE_TRIAL_CALL_CHECK")}/trials/${encId}/pre-trial-call-check`
+      : `/trials/${encId}/pre-trial-call-check`;
     const check = await attempt(`PATCH ${checkPath}`, () =>
-      patch(checkPath, { trial_id: firstId, stage: 2, checked: true }),
+      patch(checkPath, { stage: 2, checked: true }),
     );
     if (check) {
       cases.push({
         label: `PATCH ${checkPath}`,
-        spec: schemaFor(checkPath, "patch", "200"),
+        spec: schemaFor("/trials/{id}/pre-trial-call-check", "patch", "200"),
         body: check,
       });
     }
 
-    const note = await attempt("PATCH /trials/note", () =>
-      patch("/trials/note", { trial_id: firstId, note: "contract-check" }),
+    const notePath = viaN8n
+      ? `/${hookId("N8N_WEBHOOK_ID_NOTE")}/trials/${encId}/note`
+      : `/trials/${encId}/note`;
+    const note = await attempt(`PATCH ${notePath}`, () =>
+      patch(notePath, { note: "contract-check" }),
     );
     if (note) {
       cases.push({
-        label: "PATCH /trials/note",
-        spec: schemaFor("/trials/note", "patch", "200"),
+        label: `PATCH ${notePath}`,
+        spec: schemaFor("/trials/{id}/note", "patch", "200"),
         body: note,
       });
     }

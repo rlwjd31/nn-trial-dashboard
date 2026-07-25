@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { callN8n } from "@/lib/n8n";
+import { callN8n, n8nPaths } from "@/lib/n8n";
 import { getMockTrialDetail } from "@/features/trials/mock/trials.mock";
 
 export const dynamic = "force-dynamic";
 
 const USE_MOCK = !process.env.N8N_BASE_URL;
 
-// GET /api/trials/[id]  ->  n8n GET /webhook/trials/detail?trial_id=<id>
+// GET /api/trials/[id]  ->  n8n GET /webhook/{id}/trials/<trial_id>
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -27,10 +27,7 @@ export async function GET(
   }
 
   try {
-    const res = await callN8n(
-      `/webhook/trials/detail?trial_id=${encodeURIComponent(id)}`,
-      { method: "GET" },
-    );
+    const res = await callN8n(n8nPaths.trialDetail(id), { method: "GET" });
     const body = await res.json();
     return NextResponse.json(body, {
       status: res.status,

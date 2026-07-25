@@ -339,13 +339,13 @@ function toListItem(
   };
 }
 
-/** GET /webhook/trials/today 대체 — 오늘의 trial 목록 */
+/** GET /api/trials (n8n /webhook/trials) 대체 — 오늘의 trial 목록 */
 export function getMockTrialsToday(now: Date = new Date()): TrialsTodayResponse {
   const dateStr = todayKstDate(now);
   return { trials: SEED.map((s, i) => toListItem(s, dateStr, i)) };
 }
 
-/** GET /webhook/trials/detail 대체 — 단건 상세 (없으면 null) */
+/** GET /api/trials/{id} (n8n /webhook/<hookId>/trials/<id>) 대체 — 단건 상세 (없으면 null) */
 export function getMockTrialDetail(
   trialId: string,
   now: Date = new Date(),

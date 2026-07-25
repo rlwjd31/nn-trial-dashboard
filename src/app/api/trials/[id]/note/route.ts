@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { callN8n } from "@/lib/n8n";
+import { callN8n, n8nPaths } from "@/lib/n8n";
 import { setMockNote } from "@/features/trials/mock/trials.mock";
 import type { NoteRequest } from "@/types/trial";
 
@@ -7,9 +7,18 @@ export const dynamic = "force-dynamic";
 
 const USE_MOCK = !process.env.N8N_BASE_URL;
 
-// PATCH /api/trials/note  ->  n8n PATCH /webhook/trials/note
-// 학생 추가정보(세일즈 메모) 저장. body: { trial_id, note }
-export async function PATCH(req: Request) {
+// PATCH /api/trials/[id]/note  ->  n8n PATCH /webhook/{hookId}/trials/<trial_id>/note
+// 학생 추가정보(세일즈 메모) 저장.
+// trial_id 는 경로 파라미터다(body 아님). body 는 { note } 뿐이고 n8n 에 그대로 전달한다.
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id: trial_id } = await params;
+  if (!trial_id) {
+    return NextResponse.json({ error: "Missing trial id" }, { status: 400 });
+  }
+
   let body: NoteRequest;
   try {
     body = (await req.json()) as NoteRequest;
@@ -17,10 +26,10 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { trial_id, note } = body ?? {};
-  if (!trial_id || typeof note !== "string") {
+  const { note } = body ?? {};
+  if (typeof note !== "string") {
     return NextResponse.json(
-      { error: "Body must be { trial_id: string, note: string }" },
+      { error: "Body must be { note: string }" },
       { status: 400 },
     );
   }
@@ -37,9 +46,9 @@ export async function PATCH(req: Request) {
   }
 
   try {
-    const res = await callN8n("/webhook/trials/note", {
+    const res = await callN8n(n8nPaths.note(trial_id), {
       method: "PATCH",
-      body: JSON.stringify({ trial_id, note }),
+      body: JSON.stringify({ note }),
     });
     const data = await res.json();
     return NextResponse.json(data, {
@@ -47,7 +56,7 @@ export async function PATCH(req: Request) {
       headers: { "cache-control": "no-store" },
     });
   } catch (err) {
-    console.error("[/api/trials/note] proxy error:", err);
+    console.error(`[/api/trials/${trial_id}/note] proxy error:`, err);
     return NextResponse.json({ error: "Failed to save note" }, { status: 502 });
   }
 }

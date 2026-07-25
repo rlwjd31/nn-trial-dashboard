@@ -34,19 +34,34 @@ export async function fetchTrialDetail(trialId: string): Promise<TrialDetail> {
   return toJson<TrialDetail>(res);
 }
 
+/**
+ * PATCH /api/trials/{trialId}/pre-trial-call-check
+ * trial_id 는 **경로**로 간다 — body 는 `{ stage, checked }` 뿐이다.
+ */
 export async function savePreTrialCallCheck(
+  trialId: string,
   input: PreTrialCallCheckRequest,
 ): Promise<PreTrialCallCheckResponse> {
-  const res = await fetch("/api/trials/pre-trial-call-check", {
-    method: "PATCH",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(input),
-  });
+  const res = await fetch(
+    `/api/trials/${encodeURIComponent(trialId)}/pre-trial-call-check`,
+    {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
   return toJson<PreTrialCallCheckResponse>(res);
 }
 
-export async function saveNote(input: NoteRequest): Promise<NoteResponse> {
-  const res = await fetch("/api/trials/note", {
+/**
+ * PATCH /api/trials/{trialId}/note
+ * trial_id 는 **경로**로 간다 — body 는 `{ note }` 뿐이다.
+ */
+export async function saveNote(
+  trialId: string,
+  input: NoteRequest,
+): Promise<NoteResponse> {
+  const res = await fetch(`/api/trials/${encodeURIComponent(trialId)}/note`, {
     method: "PATCH",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(input),
