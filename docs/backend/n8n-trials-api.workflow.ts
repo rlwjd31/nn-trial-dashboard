@@ -1,46 +1,46 @@
 // n8n Workflow SDK — Trials API (cloud n8n: naonowadmin.app.n8n.cloud)
+// 배포 대상: 워크플로우 "[Trial API] - Main" (id OHSTgJsHd6337qgf). 이 파일은 배포본과 동기 유지.
 // 4 webhook 엔드포인트 → Postgres(executeQuery) → respondToWebhook(JSON).
-// 실 스키마 검증(2026-07-24, DB=naonow prod, cred=automation_coupons) 기준으로 작성됨.
-// validate_workflow 통과(node 15). 대상 워크플로우 OHSTgJsHd6337qgf 에 MCP 접근 켜지면 투입.
 //
+// 네이밍 컨벤션:
+//  - public 원천 테이블: PascalCase 따옴표 (public."Lessons" 등) — 기존 스키마 그대로.
+//  - 신규 상태 테이블: automation.trial_dashboard_state (snake_case, automation 스키마 컨벤션).
 // 전제:
-//  - 테이블 public."TrialDashboardState" 가 존재해야 함 (ddl.sql — DB 소유자가 생성).
-//  - 각 Webhook 의 Header Auth 자격증명(x-api-key = N8N_API_TOKEN) 을 붙여야 함.
-//  - Postgres 자격증명 id=TYGrEaGEtyIrZUHe (automation_coupons, DB=naonow).
+//  - automation.trial_dashboard_state 존재 (ddl.sql — DB 소유자가 생성).
+//  - Postgres 자격증명 id=TYGrEaGEtyIrZUHe (automation_coupons, DB=naonow prod).
+//  - 인증은 현재 none. 배포 전 x-api-key(Header Auth) 추가 권장.
 //
-// 확정 스키마 사실:
-//  - status enum: canceled(L1), 값 {scheduled,in_progress,canceled,completed,paid,approved,rescheduled}
-//  - Mentors: firstName/lastName/tier/gender (단일 name 없음)
-//  - CallQueues.studentId 로 조인 (LATERAL 최신 1건)
-//  - sales_rep_name: Users 에 이름 컬럼 없음 → email local-part 로 대체(추후 확정)
+// 확정 스키마 사실(라이브 검증):
+//  - status enum: canceled(L1). Mentors: firstName/lastName/tier/gender.
+//  - CallQueues.studentId 로 조인. sales_rep_name: Users 이름 컬럼 없음 → email local-part.
+//  - 스코프: precheck_1/2/3 + sales_note. (pre/post_call_done 제외 — 구현 불요)
 
-import { workflow, node, trigger, newCredential, ifElse, expr } from '@n8n/workflow-sdk';
+import { workflow, node, trigger, ifElse, expr } from '@n8n/workflow-sdk';
 
-const apiKeyCred = newCredential('Trials API x-api-key');
+const PG = { postgres: { id: 'TYGrEaGEtyIrZUHe', name: 'automation_coupons' } };
 
 const todayWebhook = trigger({
   type: 'n8n-nodes-base.webhook', version: 2.1,
-  config: { name: 'Today Webhook', parameters: { httpMethod: 'GET', path: 'trials/today', authentication: 'headerAuth', responseMode: 'responseNode', options: {} }, credentials: { httpHeaderAuth: apiKeyCred } }
+  config: { name: 'Today Webhook', parameters: { httpMethod: 'GET', path: 'trials/today', responseMode: 'responseNode', options: {} } }
 });
 const detailWebhook = trigger({
   type: 'n8n-nodes-base.webhook', version: 2.1,
-  config: { name: 'Detail Webhook', parameters: { httpMethod: 'GET', path: 'trials/detail', authentication: 'headerAuth', responseMode: 'responseNode', options: {} }, credentials: { httpHeaderAuth: apiKeyCred } }
+  config: { name: 'Detail Webhook', parameters: { httpMethod: 'GET', path: 'trials/detail', responseMode: 'responseNode', options: {} } }
 });
 const precheckWebhook = trigger({
   type: 'n8n-nodes-base.webhook', version: 2.1,
-  config: { name: 'Precheck Webhook', parameters: { httpMethod: 'PATCH', path: 'trials/precheck', authentication: 'headerAuth', responseMode: 'responseNode', options: {} }, credentials: { httpHeaderAuth: apiKeyCred } }
+  config: { name: 'Pre-trial Call Webhook', parameters: { httpMethod: 'PATCH', path: 'trials/pre-trial-call', responseMode: 'responseNode', options: {} } }
 });
 const noteWebhook = trigger({
   type: 'n8n-nodes-base.webhook', version: 2.1,
-  config: { name: 'Note Webhook', parameters: { httpMethod: 'PATCH', path: 'trials/note', authentication: 'headerAuth', responseMode: 'responseNode', options: {} }, credentials: { httpHeaderAuth: apiKeyCred } }
+  config: { name: 'Note Webhook', parameters: { httpMethod: 'PATCH', path: 'trials/note', responseMode: 'responseNode', options: {} } }
 });
 
 // Route 1: GET /trials/today
 const todayQuery = node({
   type: 'n8n-nodes-base.postgres', version: 2.6,
-  config: {
-    name: 'Query Today', parameters: { resource: 'database', operation: 'executeQuery', options: {},
-      query: `SELECT
+  config: { name: 'Query Today', credentials: PG, parameters: { resource: 'database', operation: 'executeQuery', options: {},
+    query: `SELECT
   l.id::text AS trial_id,
   to_char(l."startAt" AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD"T"HH24:MI:SS') || '+09:00' AS trial_time,
   s.id::text AS student_id,
@@ -50,27 +50,20 @@ const todayQuery = node({
   m.tier::text AS mentor_tier,
   COALESCE(split_part(rep.email, '@', 1), '') AS sales_rep_name,
   l.status::text AS status,
-  COALESCE(d."precheck1", FALSE) AS precheck_1,
-  COALESCE(d."precheck2", FALSE) AS precheck_2,
-  COALESCE(d."precheck3", FALSE) AS precheck_3,
-  COALESCE(d."preCallDone", FALSE) AS pre_call_done,
-  COALESCE(d."postCallDone", FALSE) AS post_call_done,
+  COALESCE(d.pre_trial_calls, ARRAY[false,false,false]::boolean[]) AS pre_trial_calls,
   (cq.lifecycle = 'converted' OR cq."purchasedAt" IS NOT NULL) AS converted
-FROM "Lessons" l
-JOIN "Students" s ON s.id = l."studentId"
-JOIN "Users" u ON u.id = s."userId"
-LEFT JOIN "Mentors" m ON m.id = l."mentorId"
+FROM public."Lessons" l
+JOIN public."Students" s ON s.id = l."studentId"
+JOIN public."Users" u ON u.id = s."userId"
+LEFT JOIN public."Mentors" m ON m.id = l."mentorId"
 LEFT JOIN LATERAL (
-  SELECT cq.* FROM "CallQueues" cq WHERE cq."studentId" = s.id ORDER BY cq."updatedAt" DESC LIMIT 1
+  SELECT cq.* FROM public."CallQueues" cq WHERE cq."studentId" = s.id ORDER BY cq."updatedAt" DESC LIMIT 1
 ) cq ON TRUE
-LEFT JOIN "Users" rep ON rep.id = COALESCE(cq."claimedByAdminId", cq."autoAssignedToId")
-LEFT JOIN "TrialDashboardState" d ON d."lessonId" = l.id
+LEFT JOIN public."Users" rep ON rep.id = COALESCE(cq."claimedByAdminId", cq."autoAssignedToId")
+LEFT JOIN automation.trial_dashboard_state d ON d.lesson_id = l.id
 WHERE l."isTrial" = TRUE
   AND (l."startAt" AT TIME ZONE 'Asia/Seoul')::date = (now() AT TIME ZONE 'Asia/Seoul')::date
-ORDER BY l."startAt"`
-    },
-    credentials: { postgres: { id: 'TYGrEaGEtyIrZUHe', name: 'automation_coupons' } }
-  }
+ORDER BY l."startAt"` } }
 });
 const todayAggregate = node({
   type: 'n8n-nodes-base.aggregate', version: 1,
@@ -84,8 +77,7 @@ const todayRespond = node({
 // Route 2: GET /trials/detail?trial_id=
 const detailQuery = node({
   type: 'n8n-nodes-base.postgres', version: 2.6,
-  config: {
-    name: 'Query Detail', alwaysOutputData: true,
+  config: { name: 'Query Detail', alwaysOutputData: true, credentials: PG,
     parameters: { resource: 'database', operation: 'executeQuery',
       options: { queryReplacement: expr('{{ [$json.query.trial_id] }}') },
       query: `SELECT
@@ -99,18 +91,16 @@ const detailQuery = node({
   m.gender::text AS mentor_gender,
   COALESCE(cq."answersJson"->'interests', '[]'::jsonb) AS interests,
   to_char(l."startAt" AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD') AS trial_date,
-  d."salesNote" AS sales_note
-FROM "Lessons" l
-JOIN "Students" s ON s.id = l."studentId"
-JOIN "Users" u ON u.id = s."userId"
-LEFT JOIN "Mentors" m ON m.id = l."mentorId"
+  d.sales_note AS sales_note
+FROM public."Lessons" l
+JOIN public."Students" s ON s.id = l."studentId"
+JOIN public."Users" u ON u.id = s."userId"
+LEFT JOIN public."Mentors" m ON m.id = l."mentorId"
 LEFT JOIN LATERAL (
-  SELECT cq.* FROM "CallQueues" cq WHERE cq."studentId" = s.id ORDER BY cq."updatedAt" DESC LIMIT 1
+  SELECT cq.* FROM public."CallQueues" cq WHERE cq."studentId" = s.id ORDER BY cq."updatedAt" DESC LIMIT 1
 ) cq ON TRUE
-LEFT JOIN "TrialDashboardState" d ON d."lessonId" = l.id
-WHERE l.id = $1::int`
-    },
-    credentials: { postgres: { id: 'TYGrEaGEtyIrZUHe', name: 'automation_coupons' } }
+LEFT JOIN automation.trial_dashboard_state d ON d.lesson_id = l.id
+WHERE l.id = $1::int` }
   }
 });
 const detailFound = ifElse({
@@ -126,46 +116,39 @@ const detailNotFound = node({
   config: { name: 'Respond 404', parameters: { respondWith: 'json', responseBody: expr('{{ { "error": "Trial not found" } }}'), options: { responseCode: 404 } } }
 });
 
-// Route 3: PATCH /trials/precheck
+// Route 3: PATCH /trials/pre-trial-call  (단일 stage(1..3) 의 진행 여부를 배열 요소로 upsert)
 const precheckQuery = node({
   type: 'n8n-nodes-base.postgres', version: 2.6,
-  config: {
-    name: 'Upsert Precheck',
+  config: { name: 'Upsert Pre-trial Call', credentials: PG,
     parameters: { resource: 'database', operation: 'executeQuery',
       options: { queryReplacement: expr('{{ [$json.body.trial_id, $json.body.stage, $json.body.checked] }}') },
-      query: `INSERT INTO "TrialDashboardState" AS d ("lessonId","precheck1","precheck2","precheck3")
-VALUES ($1::int,
-  CASE WHEN $2::int = 1 THEN $3::boolean ELSE FALSE END,
-  CASE WHEN $2::int = 2 THEN $3::boolean ELSE FALSE END,
-  CASE WHEN $2::int = 3 THEN $3::boolean ELSE FALSE END)
-ON CONFLICT ("lessonId") DO UPDATE SET
-  "precheck1" = CASE WHEN $2::int = 1 THEN $3::boolean ELSE d."precheck1" END,
-  "precheck2" = CASE WHEN $2::int = 2 THEN $3::boolean ELSE d."precheck2" END,
-  "precheck3" = CASE WHEN $2::int = 3 THEN $3::boolean ELSE d."precheck3" END,
-  "updatedAt" = now()`
-    },
-    credentials: { postgres: { id: 'TYGrEaGEtyIrZUHe', name: 'automation_coupons' } }
+      query: `INSERT INTO automation.trial_dashboard_state AS d (lesson_id, pre_trial_calls)
+VALUES ($1::int, ARRAY[
+  ($2::int = 1 AND $3::boolean),
+  ($2::int = 2 AND $3::boolean),
+  ($2::int = 3 AND $3::boolean)
+]::boolean[])
+ON CONFLICT (lesson_id) DO UPDATE SET
+  pre_trial_calls[$2::int] = $3::boolean,
+  updated_at = now()` }
   }
 });
 const precheckRespond = node({
   type: 'n8n-nodes-base.respondToWebhook', version: 1.5,
-  config: { name: 'Respond Precheck', parameters: { respondWith: 'json', responseBody: expr('{{ { "ok": true, "trial_id": $(\'Precheck Webhook\').item.json.body.trial_id, "stage": $(\'Precheck Webhook\').item.json.body.stage, "checked": $(\'Precheck Webhook\').item.json.body.checked } }}'), options: { responseHeaders: { entries: [{ name: 'Cache-Control', value: 'no-store' }] } } } }
+  config: { name: 'Respond Pre-trial Call', parameters: { respondWith: 'json', responseBody: expr('{{ { "ok": true, "trial_id": $(\'Pre-trial Call Webhook\').item.json.body.trial_id, "stage": $(\'Pre-trial Call Webhook\').item.json.body.stage, "checked": $(\'Pre-trial Call Webhook\').item.json.body.checked } }}'), options: { responseHeaders: { entries: [{ name: 'Cache-Control', value: 'no-store' }] } } } }
 });
 
 // Route 4: PATCH /trials/note
 const noteQuery = node({
   type: 'n8n-nodes-base.postgres', version: 2.6,
-  config: {
-    name: 'Upsert Note',
+  config: { name: 'Upsert Note', credentials: PG,
     parameters: { resource: 'database', operation: 'executeQuery',
       options: { queryReplacement: expr('{{ [$json.body.trial_id, $json.body.note] }}') },
-      query: `INSERT INTO "TrialDashboardState" AS d ("lessonId","salesNote")
+      query: `INSERT INTO automation.trial_dashboard_state AS d (lesson_id, sales_note)
 VALUES ($1::int, NULLIF($2, ''))
-ON CONFLICT ("lessonId") DO UPDATE SET
-  "salesNote" = NULLIF($2, ''),
-  "updatedAt" = now()`
-    },
-    credentials: { postgres: { id: 'TYGrEaGEtyIrZUHe', name: 'automation_coupons' } }
+ON CONFLICT (lesson_id) DO UPDATE SET
+  sales_note = NULLIF($2, ''),
+  updated_at = now()` }
   }
 });
 const noteRespond = node({

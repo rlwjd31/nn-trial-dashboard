@@ -80,7 +80,13 @@
 ---
 
 ## 4. 계약 확정 (frontend 실사용 기준 최소 필드)
-- **목록 `TrialListItem`**: 위 1.1 + 1.2 필드 전부 = 현재 타입 그대로. 빠지면 안 되는 "숨은 필수"는 `pre_call_done`·`post_call_done`(카드).
+- **목록 `TrialListItem`**: 위 1.1 필드 + `pre_trial_calls: boolean[]`(길이 3) + `converted`.
+  ⚠ **스코프/명명 변경 → 프론트 코드 수정 필요**:
+  - `precheck_1/2/3`(3개 boolean) → **`pre_trial_calls: boolean[]`** 단일 배열(예 `[false,true,false]`).
+    · type `TrialListItem` · `TrialsTable`(`checked={t.pre_trial_calls[stage-1]}`) · `computeStats`(remaining=`t.pre_trial_calls.every(v=>!v)`) · mock.
+  - 쓰기 엔드포인트 `precheck` → **`pre-trial-call`**: `/api/trials/pre-trial-call`(PATCH), n8n `/webhook/trials/pre-trial-call`.
+    · route handler 폴더 · api client(`savePrecheck`→`savePreTrialCall`) · 훅. body 는 `{trial_id, stage, checked}` 유지.
+  - `pre_call_done`·`post_call_done` 제거(구현 불요) → §1.2 "Pre-call done"·"Post-call done" 타일 **삭제**(computeStats·StatCards).
 - **상세 `TrialDetail`**: 1.3 필드. `sales_note?` 추가. `call_queue_url`은 CloudTalk 전환 시 제거(현재는 병합 충돌 방지로 유지).
 - **쓰기**: `PrecheckRequest{trial_id,stage(1|2|3),checked}` / `NoteRequest{trial_id,note}`.
 - 상세 필드는 **개인정보(email/phone)** 포함 → URL 토큰 게이트(PRD §1) 뒤에서만 노출.

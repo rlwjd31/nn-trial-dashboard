@@ -8,6 +8,12 @@
 > **현재 단계 = 문서/설계만.** n8n 워크플로우 구축·라이브 DB 조회·프로덕션 DDL 실행은 하지 않는다.
 > 관련 문서: 프론트 데이터 요구 [frontend-data-needs.md](./frontend-data-needs.md), API 명세 [openapi.yaml](./openapi.yaml).
 > **확정**: precheck 횟수 + 학생 추가정보는 **trial-sales 전용 기능 영역** → 신규 테이블 DDL 을 기능 요구 기준으로 둔다(아래 §2).
+>
+> ⚠ **최종 반영(이 문서의 §2·§3 인라인 SQL보다 우선)** — 배포본은 아래 파일이 SoT다.
+> - 테이블: **`automation.trial_dashboard_state`** (snake_case, automation 스키마 컨벤션). 컬럼 `lesson_id, precheck_1, precheck_2, precheck_3, sales_note, updated_by, updated_at`. DDL: [ddl.sql](./ddl.sql).
+> - 워크플로우 쿼리(배포본 동기): [n8n-trials-api.workflow.ts](./n8n-trials-api.workflow.ts). public 원천 테이블은 `public."Lessons"` 처럼 스키마 수식.
+> - **스코프 축소**: `pre_call_done` / `post_call_done` 제거(구현 불요) → 목록 응답·KPI에서 빠짐. 프론트 StatCards의 두 타일도 제거 대상.
+> - 배포 워크플로우: "[Trial API] - Main" (id `OHSTgJsHd6337qgf`).
 
 ---
 

@@ -73,15 +73,15 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ApiError" }
 
-  /trials/precheck:
+  /trials/pre-trial-call:
     patch:
       tags: [trials]
-      operationId: savePrecheck
-      summary: pre-trial 체크 저장
+      operationId: savePreTrialCall
+      summary: pre-trial call 진행 저장
       description: >
-        pre-trial 체크(1·2·3) 저장. 프론트는 optimistic update 후 이 요청을 보낸다.
-        프록시 대상 n8n `PATCH /webhook/trials/precheck`. 저장처는 신규
-        `sales."TrialDashboardState"` (data-layer.md §2).
+        pre-trial call(1·2·3차) 단건 진행 여부 저장. 프론트는 optimistic update 후 이 요청을 보낸다.
+        프록시 대상 n8n `PATCH /webhook/trials/pre-trial-call`. 저장처는
+        `automation.trial_dashboard_state.pre_trial_calls[stage]` (ddl.sql).
       requestBody:
         required: true
         content:
@@ -154,11 +154,7 @@ components:
         - mentor_tier
         - sales_rep_name
         - status
-        - precheck_1
-        - precheck_2
-        - precheck_3
-        - pre_call_done
-        - post_call_done
+        - pre_trial_calls
         - converted
       properties:
         trial_id: { type: string, example: "48213" }
@@ -180,15 +176,12 @@ components:
           type: string
           description: Lessons.status. 관측값 approved | scheduled | canceled(철자 검증 필요).
           example: "scheduled"
-        precheck_1: { type: boolean }
-        precheck_2: { type: boolean }
-        precheck_3: { type: boolean }
-        pre_call_done:
-          type: boolean
-          description: KPI 카드 전용(행 미표시). 판정기준 미확정(PRD §9).
-        post_call_done:
-          type: boolean
-          description: KPI 카드 전용(행 미표시). 판정기준 미확정(PRD §9).
+        pre_trial_calls:
+          type: array
+          items: { type: boolean }
+          minItems: 3
+          maxItems: 3
+          description: "[1차,2차,3차] pre-trial call 진행 여부. 예: [false, true, false]"
         converted:
           type: boolean
           description: CallQueues.lifecycle='converted' OR purchasedAt IS NOT NULL.
