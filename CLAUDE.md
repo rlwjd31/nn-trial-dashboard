@@ -120,8 +120,12 @@ mock 응답 모양은 계약과 일치해야 한다(`pnpm test:contract` 가 이
   없는 id 는 **404 `{"error":"Trial not found"}`**(IF `loose` 수정이 실제로 동작함), 정렬 DESC.
   **목록에 webhookId 는 붙지 않는다** — `/webhook/<uuid>/trials` 는 404 `not registered` 로 확정.
   ⚠ MCP `get_workflow_details` 의 triggerInfo 는 **항상** `<webhookId>/<path>` 로 표시하므로 URL 판별 근거로 쓰지 말 것.
-- ⚠ **인증 `none` 인 채로 발행돼 있다.** 목록 응답에 학생 이름·이메일·휴대폰번호가 들어간다 →
-  URL 만 알면 누구나 조회된다. x-api-key(Header Auth) 부착이 미해결 과제다.
+- **인증 `none` — 의도적 보류(2026-07-26 결정).** 팀 내부 MVP 시연으로 사용 승인을 먼저 받는 것이
+  목표이므로 그때까지 인증을 붙이지 않는다. **실수가 아니므로 다시 제기하지 말 것.**
+  단 전제는 알고 있어야 한다: PII(학생 이름·이메일·휴대폰번호) 전부를 담은 **목록만 UUID 가 없어**
+  `https://naonowadmin.app.n8n.cloud/webhook/trials` 로 호스트만 알면 열린다(나머지 3개는 UUID 로 가려짐).
+  → **승인 후 롤아웃 전 필수 작업**: Webhook 노드 4개에 Header Auth(`x-api-key`) 부착.
+  프록시(`src/lib/n8n.ts`)는 `N8N_API_TOKEN` 으로 이미 헤더를 붙이고 있어 n8n 쪽만 켜면 된다.
 - **타임존 (2026-07-25 수정 완료·배포됨)**: `Lessons.startAt` 은 `timestamp without time zone` 인데
   **값은 UTC** 다. 확정 근거(추론 아님): 타임존 명시 컬럼과 31,567행 대조 —
   `automation.paid_class_reminder_log.class_start_at` 28,784/28,791 일치,
