@@ -28,7 +28,9 @@ export default function RootLayout({
       lang="en"
       className={`dark ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      {/* h-full: 껍데기를 뷰포트 높이에 고정한다 — 페이지가 아니라 표 안쪽이 스크롤된다
+          (표 헤더 sticky 가 붙을 스크롤 컨테이너를 표 영역으로 만들기 위함) */}
+      <body className="flex h-full flex-col">
         <Providers>{children}</Providers>
       </body>
     </html>
