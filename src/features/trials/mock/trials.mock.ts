@@ -23,6 +23,7 @@
 //   pre_call_done        ← 세일즈 pre-call 완료 (판정 기준 PRD §9 미확정)
 //   post_call_done       ← 세일즈 post-call 완료 (판정 기준 PRD §9 미확정)
 //   precheck_1/2/3       ← pre-trial 체크 (저장 위치 PRD §9 미확정)
+//   sales_note           ← automation.trial_dashboard_state.sales_note (세일즈 메모 마크다운)
 //   call_queue_url       ← "CallQueues".id 기반 세일즈 콜 큐 딥링크
 //
 // ⚠ Mentors 테이블 전용 스키마 문서는 없음(users.md가 Mentors 존재만 언급).
@@ -64,6 +65,8 @@ interface TrialSeed {
   level: string;
   interests: string[];
   call_queue_id: number;
+  /** 세일즈 메모(마크다운). 미기록이면 생략 → 응답에서 null */
+  sales_note?: string;
 }
 
 // 오늘의 trial 12건. 상태·티어·체크 상태를 골고루 섞어 대시보드 집계가 의미 있도록 구성.
@@ -308,6 +311,9 @@ const SEED: TrialSeed[] = [
     level: "4 · Intermediate-Low",
     interests: ["Swimming", "Comics", "Space"],
     call_queue_id: 10769,
+    // 기록된 메모가 에디터에 로드되는 경로를 확인하려고 한 건만 시드로 채워둔다.
+    // (e2e notes.spec 이 이 값을 단언한다 — 바꾸면 spec 도 함께 갱신)
+    sales_note: "## 1차 콜 요약\n\n- 학부모 관심: 회화 자신감\n- 결제 의향 **높음**",
   },
   {
     trial_id: "48261",
@@ -362,6 +368,10 @@ const SEED: TrialSeed[] = [
 // ── precheck 인메모리 오버라이드 (dev 서버 프로세스 동안 유지) ────────────────
 // n8n 도입 전까지 PATCH 결과를 이 Map 에 반영해, 목록 재조회 시에도 값이 유지되게 한다.
 const precheckOverrides = new Map<string, Partial<Record<PrecheckStage, boolean>>>();
+
+// ── sales_note 인메모리 오버라이드 (dev 서버 프로세스 동안 유지) ─────────────
+// PATCH /api/trials/note 의 결과를 여기 반영해, 상세 재조회 시 값이 유지되게 한다.
+const noteOverrides = new Map<string, string>();
 
 /** KST 기준 오늘 날짜 문자열 "YYYY-MM-DD" */
 function todayKstDate(now: Date): string {
@@ -434,6 +444,7 @@ export function getMockTrialDetail(
 ): TrialDetail | null {
   const seed = SEED.find((s) => s.trial_id === trialId);
   if (!seed) return null;
+  const note = noteOverrides.get(trialId) ?? seed.sales_note ?? null;
   return {
     trial_id: seed.trial_id,
     student_id: seed.student_id,
@@ -447,6 +458,8 @@ export function getMockTrialDetail(
     interests: seed.interests,
     trial_date: todayKstDate(now),
     call_queue_url: `https://app.naonow.com/sales/call-queue/${seed.call_queue_id}`,
+    // 빈 문자열 저장은 "기록 삭제" → null 로 돌려준다 (계약: 미기록이면 null)
+    sales_note: note === "" ? null : note,
   };
 }
 
@@ -461,5 +474,13 @@ export function setMockPrecheck(
   const current = precheckOverrides.get(trialId) ?? {};
   current[stage] = checked;
   precheckOverrides.set(trialId, current);
+  return true;
+}
+
+/** PATCH /webhook/trials/note 대체 — 오버라이드 저장 (빈 문자열 = 기록 삭제) */
+export function setMockNote(trialId: string, note: string): boolean {
+  const seed = SEED.find((s) => s.trial_id === trialId);
+  if (!seed) return false;
+  noteOverrides.set(trialId, note);
   return true;
 }

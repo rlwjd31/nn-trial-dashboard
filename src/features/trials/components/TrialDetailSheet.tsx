@@ -129,7 +129,14 @@ export function TrialDetailSheet({ trialId, open, onOpenChange }: Props) {
             </p>
           )}
           {detail && <DetailBody detail={detail} />}
-          {detail && <NotesEditor trialId={trialId} />}
+          {/* key: trial 전환 시 에디터를 재마운트해 해당 trial 의 메모로 초기화 */}
+          {detail && (
+            <NotesEditor
+              key={detail.trial_id}
+              trialId={detail.trial_id}
+              note={detail.sales_note}
+            />
+          )}
         </div>
 
         <div className="flex flex-col gap-2 border-t border-glass-edge p-4">

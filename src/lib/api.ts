@@ -2,6 +2,8 @@
 // n8n URL/토큰은 여기서 다루지 않는다 (서버 Route Handler 가 프록시).
 
 import type {
+  NoteRequest,
+  NoteResponse,
   PrecheckRequest,
   PrecheckResponse,
   TrialDetail,
@@ -41,4 +43,13 @@ export async function savePrecheck(
     body: JSON.stringify(input),
   });
   return toJson<PrecheckResponse>(res);
+}
+
+export async function saveNote(input: NoteRequest): Promise<NoteResponse> {
+  const res = await fetch("/api/trials/note", {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return toJson<NoteResponse>(res);
 }

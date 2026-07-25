@@ -1,51 +1,90 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
+import { useNoteMutation } from "../hooks/useNoteMutation";
 
 // MDXEditor 는 클라 전용 → dynamic(ssr:false). 스펙: ../docs/ptc-call-notes.md
 const Editor = dynamic(() => import("./InitializedMDXEditor"), { ssr: false });
 
+/**
+ * 타이핑이 멈춘 뒤 저장까지 기다리는 시간.
+ * MDXEditor 의 onChange 는 스로틀되지 않아(키 입력마다 발생) 디바운스가 필수다.
+ */
+const SAVE_DEBOUNCE_MS = 700;
+
 interface Props {
-  /** 메모를 trial 단위로 구분·저장하기 위한 키 */
-  trialId: string | null;
+  trialId: string;
+  /** 상세 응답의 sales_note (미기록이면 null) */
+  note: string | null;
 }
 
 /**
  * PTC 콜 메모 — 마크다운을 입력하는 즉시 그 자리에서 렌더(WYSIWYG).
- * TODO: 현재 저장은 trial별 localStorage 임시 방식. 확정 후 n8n
- *       CallQueueNotes(type='sales') 엔드포인트로 교체(../docs/ptc-call-notes.md §4).
+ * 저장은 PATCH /api/trials/note → n8n `sales_note` (자동 저장, optimistic).
+ *
+ * MDXEditor 의 `markdown` 은 마운트 시점에만 읽히므로, optimistic update 로
+ * 갱신된 note 가 되돌아와도 편집 중 내용이 덮이지 않는다. trial 전환은
+ * 부모(TrialDetailSheet)의 key 재마운트로 처리한다.
  */
-export function NotesEditor({ trialId }: Props) {
-  const storageKey = trialId ? `ptc-note:${trialId}` : null;
-  const [initial, setInitial] = useState<string | null>(null);
+export function NotesEditor({ trialId, note }: Props) {
+  const { mutate, isPending, isError } = useNoteMutation();
 
-  // trial 전환 시 해당 메모 로드 (에디터는 key 로 재초기화)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 디바운스 대기 중인(아직 저장 요청을 보내지 않은) 최신 본문
+  const pendingRef = useRef<string | null>(null);
+  // 언마운트 cleanup 에서 최신 mutate 를 읽기 위한 통로 (render 중에는 쓰지 않는다)
+  const saveRef = useRef<((markdown: string) => void) | null>(null);
+
   useEffect(() => {
-    setInitial(storageKey ? (localStorage.getItem(storageKey) ?? "") : "");
-  }, [storageKey]);
+    saveRef.current = (markdown: string) =>
+      mutate({ trial_id: trialId, note: markdown });
+  }, [mutate, trialId]);
 
-  function handleChange(markdown: string) {
-    if (storageKey) localStorage.setItem(storageKey, markdown);
+  // 디바운스 대기 중 언마운트(시트 닫기·trial 전환)되면 마지막 입력이 유실되므로
+  // 그 시점에 흘려보낸다. 언마운트 후에도 mutation 은 정상 실행된다(캐시 갱신·실패 토스트 포함).
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      const markdown = pendingRef.current;
+      pendingRef.current = null;
+      if (markdown !== null) saveRef.current?.(markdown);
+    };
+  }, []);
+
+  function handleChange(markdown: string, initialMarkdownNormalize: boolean) {
+    // 초기 마크다운 정규화로 인한 onChange → 사용자 입력이 아니므로 저장하지 않는다.
+    if (initialMarkdownNormalize) return;
+    pendingRef.current = markdown;
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
+      pendingRef.current = null;
+      saveRef.current?.(markdown);
+    }, SAVE_DEBOUNCE_MS);
   }
 
   return (
     <section className="mt-2">
       <p className="mb-2 text-sm font-medium text-foreground">PTC 콜 메모</p>
       <div className="ptc-notes overflow-hidden rounded-xl border border-glass-edge bg-black/20">
-        {initial !== null && (
-          <Editor
-            key={trialId ?? "none"}
-            markdown={initial}
-            onChange={handleChange}
-            className="dark-theme"
-            contentEditableClassName="min-h-[220px]"
-            placeholder="마크다운으로 상담 내용을 기록… (예: # 제목, - 목록, **굵게**)"
-          />
-        )}
+        <Editor
+          markdown={note ?? ""}
+          onChange={handleChange}
+          className="dark-theme"
+          contentEditableClassName="min-h-[220px]"
+          placeholder="마크다운으로 상담 내용을 기록… (예: # 제목, - 목록, **굵게**)"
+        />
       </div>
       <p className="mt-1 text-[11px] text-muted-foreground/70">
-        입력 즉시 렌더(WYSIWYG) · (임시: 이 브라우저에 저장)
+        입력 즉시 렌더(WYSIWYG) ·{" "}
+        {isError ? (
+          <span className="text-destructive">저장 실패</span>
+        ) : isPending ? (
+          "저장 중…"
+        ) : (
+          "자동 저장"
+        )}
       </p>
     </section>
   );

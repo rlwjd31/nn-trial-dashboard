@@ -51,7 +51,7 @@ components ─→ hooks (TanStack Query) ─→ @/lib/api ─→ src/app/api/**/
 세 Route Handler 모두 `const USE_MOCK = !process.env.N8N_BASE_URL` 로 분기한다.
 `N8N_BASE_URL` 이 비어 있으면 n8n 대신 `features/trials/mock/trials.mock.ts` 를 서빙한다 → **env 를 채우면 자동으로 실제 프록시로 전환.**
 
-- mock 의 precheck 쓰기(`setMockPrecheck`)는 **dev 서버 프로세스 메모리(모듈 스코프 Map)** 에 남는다.
+- mock 의 쓰기(`setMockPrecheck` · `setMockNote`)는 **dev 서버 프로세스 메모리(모듈 스코프 Map)** 에 남는다.
   → 요청 간·테스트 간 상태가 공유되므로 E2E는 `workers: 1` 직렬 실행 + 테스트 말미 원복이 필수다.
   완전 초기화는 dev 서버 재시작뿐.
 - E2E 기대값은 mock 시드에 고정돼 있다(active 11 / Remaining 3 / Converted 2 등).
@@ -76,7 +76,7 @@ components ─→ hooks (TanStack Query) ─→ @/lib/api ─→ src/app/api/**/
 |---|---|---|
 | 체크 필드 | `precheck_1/2/3` (boolean ×3) | `pre_trial_call_checks: boolean[]` |
 | 체크 엔드포인트 | `/api/trials/precheck` | `/api/trials/pre-trial-call-check` |
-| 콜 메모 | `NotesEditor` → **localStorage 임시** | `PATCH /api/trials/note` (`sales_note`) |
+| 콜 메모 | ✅ 수렴 완료 — `PATCH /api/trials/note` (`sales_note`, 디바운스 자동 저장) | 동일 |
 | KPI | `pre_call_done`·`post_call_done` 타일 존재 | 백엔드에서 제거됨 → 타일 삭제 대상 |
 
 `src/types/trial.ts` 는 위 "현재" 컬럼을 반영한 상태다. 계약 쪽으로 옮길 땐
@@ -93,7 +93,7 @@ type → `lib/api.ts` → route handler → hooks → components → mock → e2
 | `dashboard.spec.ts` | KPI 집계, 목록/배지, 취소행, 구매 표시 |
 | `precheck.spec.ts` | 체크박스 optimistic + Remaining KPI + 상태 복원 |
 | `detail-sheet.spec.ts` | 상세 열기/데이터, CloudTalk 링크, 리사이즈, Esc 닫기 |
-| `notes.spec.ts` | 마크다운 WYSIWYG 렌더 + localStorage 유지 |
+| `notes.spec.ts` | 마크다운 WYSIWYG 렌더 + `sales_note` 자동 저장/로드(새로고침 후 유지) |
 
 - **셀렉터는 `e2e/helpers.ts` 를 재사용**한다 (`gotoDashboard` · `openDetail` · `row` · `kpiValue` · `SHEET`).
   직접 셀렉터를 새로 쓰기 전에 helpers 에 이미 있는지 본다.
