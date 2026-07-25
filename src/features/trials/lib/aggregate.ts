@@ -22,7 +22,7 @@ export function computeStats(trials: TrialListItem[]): TrialStats {
       }
       acc.total += 1;
       // 체크마크가 하나도 없으면 "아직 손대지 않은" 남은 trial
-      if (!t.precheck_1 && !t.precheck_2 && !t.precheck_3) acc.remaining += 1;
+      if (t.pre_trial_call_checks.every((v) => !v)) acc.remaining += 1;
       if (t.converted) acc.converted += 1;
       return acc;
     },

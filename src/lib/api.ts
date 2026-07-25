@@ -4,8 +4,8 @@
 import type {
   NoteRequest,
   NoteResponse,
-  PrecheckRequest,
-  PrecheckResponse,
+  PreTrialCallCheckRequest,
+  PreTrialCallCheckResponse,
   TrialDetail,
   TrialsTodayResponse,
 } from "@/types/trial";
@@ -34,15 +34,20 @@ export async function fetchTrialDetail(trialId: string): Promise<TrialDetail> {
   return toJson<TrialDetail>(res);
 }
 
-export async function savePrecheck(
-  input: PrecheckRequest,
-): Promise<PrecheckResponse> {
-  const res = await fetch("/api/trials/precheck", {
-    method: "PATCH",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(input),
-  });
-  return toJson<PrecheckResponse>(res);
+// 쓰기는 trial_id 를 **경로**로 보낸다 (body 에는 넣지 않는다 — 계약 §REST 화).
+export async function savePreTrialCallCheck(
+  trialId: string,
+  input: PreTrialCallCheckRequest,
+): Promise<PreTrialCallCheckResponse> {
+  const res = await fetch(
+    `/api/trials/${encodeURIComponent(trialId)}/pre-trial-call-check`,
+    {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+  return toJson<PreTrialCallCheckResponse>(res);
 }
 
 export async function saveNote(input: NoteRequest): Promise<NoteResponse> {

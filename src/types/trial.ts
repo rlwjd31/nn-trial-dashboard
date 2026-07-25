@@ -28,9 +28,8 @@ export interface TrialListItem {
   /** 이 trial을 담당하는 Sales rep 이름 (CallQueues.claimedByAdminId/autoAssignedToId → Users(admin)) */
   sales_rep_name: string;
   status: TrialStatus;
-  precheck_1: boolean;
-  precheck_2: boolean;
-  precheck_3: boolean;
+  /** [1차, 2차, 3차] pre-trial call 진행 여부. 항상 길이 3 */
+  pre_trial_call_checks: boolean[];
   /** CallQueues.lifecycle='converted' OR purchasedAt IS NOT NULL */
   converted: boolean;
 }
@@ -59,20 +58,23 @@ export interface TrialDetail {
   sales_note: string | null;
 }
 
-/** precheck 저장 단계 */
-export type PrecheckStage = 1 | 2 | 3;
+/** pre-trial call 저장 단계 */
+export type PreTrialCallStage = 1 | 2 | 3;
 
-/** PATCH /webhook/trials/precheck body (= /api/trials/precheck) */
-export interface PrecheckRequest {
-  trial_id: string;
-  stage: PrecheckStage;
+/**
+ * PATCH /api/trials/{id}/pre-trial-call-check 의 요청 body.
+ * trial_id 는 **경로에만** 있다 (body 에 넣지 않는다).
+ */
+export interface PreTrialCallCheckRequest {
+  stage: PreTrialCallStage;
   checked: boolean;
 }
 
-export interface PrecheckResponse {
+/** 응답에는 trial_id 가 에코로 돌아온다 */
+export interface PreTrialCallCheckResponse {
   ok: true;
   trial_id: string;
-  stage: PrecheckStage;
+  stage: PreTrialCallStage;
   checked: boolean;
 }
 

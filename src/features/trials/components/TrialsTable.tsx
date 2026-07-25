@@ -13,7 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { TrialListItem } from "@/types/trial";
 import { formatTrialTime, isCanceled, statusMeta, tierMeta } from "../lib/format";
-import { PrecheckCheckbox } from "./PrecheckCheckbox";
+import { PreTrialCallCheckbox } from "./PreTrialCallCheckbox";
 
 interface Props {
   trials: TrialListItem[];
@@ -103,11 +103,11 @@ export function TrialsTable({ trials, onRowClick }: Props) {
                 <TableCell>
                   <div className="flex items-center justify-center gap-3">
                     {STAGES.map((stage) => (
-                      <PrecheckCheckbox
+                      <PreTrialCallCheckbox
                         key={stage}
                         trialId={t.trial_id}
                         stage={stage}
-                        checked={t[`precheck_${stage}`]}
+                        checked={t.pre_trial_call_checks[stage - 1] ?? false}
                         disabled={canceled}
                       />
                     ))}

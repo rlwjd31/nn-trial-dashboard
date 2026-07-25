@@ -2,29 +2,31 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { savePrecheck } from "@/lib/api";
+import { savePreTrialCallCheck } from "@/lib/api";
 import type {
-  PrecheckRequest,
-  PrecheckStage,
+  PreTrialCallCheckRequest,
   TrialsTodayResponse,
 } from "@/types/trial";
 import { trialKeys } from "./queryKeys";
 
-function stageKey(stage: PrecheckStage) {
-  return `precheck_${stage}` as const;
-}
+/**
+ * 훅의 variables 는 요청 body 와 다르다 — `trial_id` 는 경로로 나가지만
+ * optimistic 갱신에 필요하므로 variables 에는 남긴다.
+ */
+type Vars = { trial_id: string } & PreTrialCallCheckRequest;
 
 /**
- * Pre-trial 체크 저장 — Optimistic Update (PRD §5).
+ * Pre-trial call 체크 저장 — Optimistic Update (PRD §5).
  * 캐시를 먼저 수정하고, 실패 시 롤백 + 토스트. 성공해도 재조회하지 않는다
  * (본인 조작 즉시 반영, n8n 재호출 억제).
  */
-export function usePrecheckMutation() {
+export function usePreTrialCallCheckMutation() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: savePrecheck,
-    onMutate: async (vars: PrecheckRequest) => {
+    mutationFn: ({ trial_id, ...body }: Vars) =>
+      savePreTrialCallCheck(trial_id, body),
+    onMutate: async (vars: Vars) => {
       await qc.cancelQueries({ queryKey: trialKeys.list() });
       const prev = qc.getQueryData<TrialsTodayResponse>(trialKeys.list());
 
@@ -33,7 +35,12 @@ export function usePrecheckMutation() {
           ? {
               trials: old.trials.map((t) =>
                 t.trial_id === vars.trial_id
-                  ? { ...t, [stageKey(vars.stage)]: vars.checked }
+                  ? {
+                      ...t,
+                      pre_trial_call_checks: t.pre_trial_call_checks.map(
+                        (v, i) => (i === vars.stage - 1 ? vars.checked : v),
+                      ),
+                    }
                   : t,
               ),
             }
